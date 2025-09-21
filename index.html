@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Air Quality Dashboard</title>
+  
+  <!-- Leaflet.js CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body { 
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
@@ -316,6 +319,10 @@
     .dark-mode .esp32-sensor-data h4 {
       color: #94a3b8 !important;
     }
+    .dark-mode .current-username {
+      background: #374151 !important;
+      color: #f1f5f9 !important;
+    }
     
     /* Theme Toggle Button */
     .theme-toggle {
@@ -347,7 +354,7 @@
   <div class="container">
     <!-- Header with Authentication -->
     <div class="header">
-      <h1>Air Quality Dashboard</h1>
+    <h1>Air Quality Dashboard</h1>
       <div class="auth-section">
         <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
           <span id="themeIcon">🌙</span>
@@ -430,7 +437,7 @@
     <!-- Dashboard (shown when authenticated) -->
     <div id="dashboard" class="hidden">
       <!-- ESP32 Device Status Card -->
-      <div class="card">
+    <div class="card">
         <h2 style="color: #3b82f6; margin-top: 0;">ESP32 Device Status</h2>
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -445,24 +452,24 @@
             No data received from ESP32 device
           </div>
         </div>
-      </div>
+    </div>
 
       <!-- AQI Data Card -->
-      <div class="card">
+    <div class="card">
         <h2 style="color: #3b82f6; margin-top: 0;">Live Air Quality of This Region</h2>
-        <div class="grid">
+      <div class="grid">
           <div class="metric-row">
             <h3>PM10 (Particulate Matter 10)</h3>
             <div class="value" id="pm10">-</div>
-          </div>
+      </div>
           <div class="metric-row">
             <h3>PM2.5 (Fine Particulate Matter)</h3>
             <div class="value" id="pm25">-</div>
-          </div>
+    </div>
           <div class="metric-row">
             <h3>CO2 (Carbon Dioxide)</h3>
             <div class="value" id="co2">-</div>
-          </div>
+  </div>
           <div class="metric-row">
             <h3>Humidity</h3>
             <div class="value" id="humidity">-</div>
@@ -494,6 +501,35 @@
           </div>
         </div>
         
+        <!-- Your Info Section -->
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0 0 15px 0; color: #374151;">Your Info</h3>
+          
+          <!-- Current Info Display -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div class="current-username" style="padding: 10px; background: #f3f4f6; border-radius: 6px;">
+              <strong>Username:</strong> <span id="currentUsername">Not set</span>
+            </div>
+            <div class="current-email" style="padding: 10px; background: #f3f4f6; border-radius: 6px;">
+              <strong>Email:</strong> <span id="currentEmail">Not set</span>
+            </div>
+          </div>
+          
+          <!-- Update Form -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Username</label>
+              <input type="text" id="usernameInput" placeholder="Enter your username" onkeypress="handleProfileKeypress(event, 'username')" style="width: 100%;" />
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Email</label>
+              <input type="email" id="emailInput" placeholder="Enter your email" onkeypress="handleProfileKeypress(event, 'email')" style="width: 100%;" />
+            </div>
+          </div>
+          
+          <button class="primary" onclick="updateProfile()" style="width: 100%;">Update Info</button>
+        </div>
+        
         <!-- City Section -->
         <div>
           <h3 style="margin: 0 0 10px 0; color: #374151;">Your City</h3>
@@ -510,6 +546,25 @@
       <!-- Weather Data Card -->
       <div class="card">
         <h2 style="color: #3b82f6; margin-top: 0;">Weather Information</h2>
+        
+        <!-- Weather Map Section -->
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0 0 10px 0; color: #374151;">Interactive Weather Map</h3>
+          <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 14px;">Search for a location or click anywhere on the map to get weather data</p>
+          
+          <!-- Search Bar -->
+          <div style="margin-bottom: 15px;">
+            <div class="input-group" style="margin-bottom: 10px;">
+              <input type="text" id="mapSearchInput" placeholder="Search for a location (e.g., Jaipur, Delhi, Mumbai)" style="flex: 1;" onkeypress="handleMapSearchKeypress(event)" />
+              <button class="primary" onclick="searchLocation()">Search</button>
+            </div>
+            <div id="searchStatus" style="font-size: 12px; color: #6b7280; margin-top: 5px;"></div>
+          </div>
+          
+          <div id="weatherMap" style="height: 300px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+        </div>
+        
+        <!-- Manual City Input -->
         <div class="input-group" style="margin-bottom: 20px;">
           <input type="text" id="cityInput" placeholder="Enter city name (e.g., Delhi)" />
           <button class="primary" onclick="fetchWeather()">Check Weather</button>
@@ -525,7 +580,7 @@
 
       <!-- Email Storage Card -->
       <div class="card">
-        <h2 style="color: #3b82f6; margin-top: 0;">User Profile</h2>
+        <h2 style="color: #3b82f6; margin-top: 0;">Email Settings</h2>
         <div class="input-group">
           <input type="email" id="emailInput" placeholder="Enter your email address" />
           <button class="primary" onclick="saveEmail()">Save Email</button>
@@ -545,6 +600,9 @@
     let isDarkMode = false;
     let esp32LastPing = null;
     let backendConnected = false;
+    let currentUsername = ''; // No default username
+    let weatherMap = null; // Leaflet map instance
+    let currentEmail = ''; // Current user email
 
     // Initialize the application
     window.addEventListener('DOMContentLoaded', function() {
@@ -562,6 +620,10 @@
       // Initialize theme
       initializeTheme();
 
+      // Load username and email from localStorage
+      loadUsername();
+      loadUserEmail();
+
       // Check if user is already authenticated
       const token = localStorage.getItem('ACCESS_TOKEN');
       if (token) {
@@ -569,11 +631,13 @@
         // Try to get user data from token (simplified for now)
         currentUser = { username: 'User', city: 'Delhi' };
         showDashboard();
-        loadUserEmail();
         updateUserDisplay();
       } else {
         showLoginForm();
       }
+
+      // Initialize weather map
+      initializeWeatherMap();
 
       // Try to detect backend port dynamically with retry
       detectBackendPortWithRetry();
@@ -792,6 +856,9 @@
       document.getElementById('dashboard').classList.remove('hidden');
       document.getElementById('userInfo').classList.remove('hidden');
       document.getElementById('loginSection').classList.add('hidden');
+      
+      // Update username display when showing dashboard
+      updateUsernameDisplay();
     }
 
     // Handle registration
@@ -987,6 +1054,9 @@
         document.getElementById('currentCityName').textContent = currentUser.city;
         document.getElementById('userCityInput').value = currentUser.city;
       }
+      
+      // Always update username display (independent of authentication)
+      updateUsernameDisplay();
     }
 
     // Update user avatar with profile photo support
@@ -1101,6 +1171,361 @@
         console.error('❌ Error loading profile photo:', error);
       }
     }
+
+    // Load username from localStorage
+    function loadUsername() {
+      const savedUsername = localStorage.getItem('USERNAME');
+      if (savedUsername) {
+        currentUsername = savedUsername;
+        updateUsernameDisplay();
+        console.log('✅ Username loaded from localStorage:', currentUsername);
+      } else {
+        // No default username - leave field blank
+        currentUsername = '';
+        updateUsernameDisplay();
+        console.log('✅ No username found, field will be blank');
+      }
+    }
+
+    // Update username display
+    function updateUsernameDisplay() {
+      const usernameElement = document.getElementById('currentUsername');
+      if (usernameElement) {
+        usernameElement.textContent = currentUsername || 'Not set';
+      }
+    }
+
+    // Update username function
+    function updateUsername() {
+      // Use the profile section's username input, not the login section's
+      const profileUsernameInput = document.querySelector('#dashboard input[id="usernameInput"]');
+      const newUsername = profileUsernameInput ? profileUsernameInput.value.trim() : '';
+      
+      // Validate input
+      if (!newUsername) {
+        alert('Please enter a username');
+        return;
+      }
+      
+      if (newUsername.length < 2) {
+        alert('Username must be at least 2 characters long');
+        return;
+      }
+      
+      if (newUsername.length > 20) {
+        alert('Username must be less than 20 characters long');
+        return;
+      }
+      
+      // Check for valid characters (letters, numbers, underscore, hyphen)
+      if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
+        alert('Username can only contain letters, numbers, underscore (_), and hyphen (-)');
+        return;
+      }
+      
+      // Update global variable
+      currentUsername = newUsername;
+      
+      // Save to localStorage
+      localStorage.setItem('USERNAME', currentUsername);
+      
+      // Update display
+      updateUsernameDisplay();
+      
+      // Clear input field
+      if (profileUsernameInput) {
+        profileUsernameInput.value = '';
+      }
+      
+      // Show success message
+      console.log('✅ Username updated to:', currentUsername);
+      alert(`Username updated to: ${currentUsername}`);
+    }
+
+    // Handle Enter key press in profile inputs
+    function handleProfileKeypress(event, field) {
+      if (event.key === 'Enter') {
+        updateProfile();
+      }
+    }
+
+    // Initialize weather map
+    function initializeWeatherMap() {
+      // Wait for DOM to be ready
+      setTimeout(() => {
+        const mapElement = document.getElementById('weatherMap');
+        if (mapElement && typeof L !== 'undefined') {
+          // Initialize map centered on Delhi, India
+          weatherMap = L.map('weatherMap').setView([28.6139, 77.2090], 6);
+          
+          // Add OpenStreetMap tiles
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(weatherMap);
+          
+          // Add click event listener
+          weatherMap.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            console.log(`🗺️ Map clicked at: ${lat}, ${lng}`);
+            
+            // Fetch weather for clicked location
+            fetchWeatherByCoordinates(lat, lng);
+          });
+          
+          console.log('✅ Weather map initialized');
+        }
+      }, 1000);
+    }
+
+    // Fetch weather by coordinates
+    async function fetchWeatherByCoordinates(lat, lng) {
+      try {
+        console.log(`🌤️ Fetching weather for coordinates: ${lat}, ${lng}`);
+        
+        // Check if backend is connected
+        if (!backendConnected) {
+          console.log('⚠️ Backend not connected, trying to detect port...');
+          await detectBackendPortWithRetry();
+        }
+        
+        const response = await fetch(`${backendUrl}/weather?lat=${lat}&lon=${lng}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Weather data received:', data);
+        
+        // Update weather display
+        updateWeatherDisplay(data);
+        
+        // Add marker to map
+        addWeatherMarker(lat, lng, data);
+        
+      } catch (error) {
+        console.error('❌ Error fetching weather by coordinates:', error);
+        
+        // Show more specific error message
+        let errorMessage = 'Failed to fetch weather data for this location';
+        if (error.name === 'AbortError') {
+          errorMessage = 'Weather request timed out. Please try again.';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Cannot connect to weather service. Please check your internet connection.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        alert(errorMessage);
+      }
+    }
+
+    // Add weather marker to map
+    function addWeatherMarker(lat, lng, weatherData) {
+      if (weatherMap) {
+        // Clear existing markers
+        weatherMap.eachLayer(function(layer) {
+          if (layer instanceof L.Marker) {
+            weatherMap.removeLayer(layer);
+          }
+        });
+        
+        // Create popup content
+        const popupContent = `
+          <div style="text-align: center; min-width: 150px;">
+            <h3 style="margin: 0 0 10px 0; color: #3b82f6;">${weatherData.city}</h3>
+            <div style="font-size: 18px; font-weight: bold; color: #374151;">
+              ${weatherData.temperature}°C
+            </div>
+            <div style="font-size: 14px; color: #6b7280; margin-top: 5px;">
+              Humidity: ${weatherData.humidity}%
+            </div>
+            <div style="font-size: 14px; color: #6b7280;">
+              Wind: ${weatherData.wind_speed} m/s
+            </div>
+          </div>
+        `;
+        
+        // Add marker
+        const marker = L.marker([lat, lng]).addTo(weatherMap);
+        marker.bindPopup(popupContent).openPopup();
+      }
+    }
+
+    // Update weather display
+    function updateWeatherDisplay(data) {
+      document.getElementById('weatherCity').textContent = data.city || '-';
+      document.getElementById('weatherTemp').textContent = data.temperature ? `${data.temperature}°C` : '-';
+      document.getElementById('weatherHumidity').textContent = data.humidity ? `${data.humidity}%` : '-';
+      document.getElementById('weatherWind').textContent = data.wind_speed ? `${data.wind_speed} m/s` : '-';
+      
+      // Show weather data section
+      document.getElementById('weatherData').style.display = 'block';
+    }
+
+    // Handle Enter key press in map search
+    function handleMapSearchKeypress(event) {
+      if (event.key === 'Enter') {
+        searchLocation();
+      }
+    }
+
+    // Search for location using Nominatim with improved matching
+    async function searchLocation() {
+      const searchInput = document.getElementById('mapSearchInput');
+      const searchTerm = searchInput.value.trim();
+      const statusDiv = document.getElementById('searchStatus');
+      
+      if (!searchTerm) {
+        statusDiv.textContent = 'Please enter a location to search';
+        statusDiv.style.color = '#ef4444';
+        return;
+      }
+      
+      statusDiv.textContent = 'Searching...';
+      statusDiv.style.color = '#6b7280';
+      
+      try {
+        console.log(`🔍 Searching for location: ${searchTerm}`);
+        
+        // Use Nominatim API for geocoding with more results and better parameters
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&addressdetails=1&extratags=1&namedetails=1`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const results = await response.json();
+        
+        if (results.length === 0) {
+          statusDiv.textContent = 'Location not found. Please try a different search term.';
+          statusDiv.style.color = '#ef4444';
+          return;
+        }
+        
+        // Find the most relevant match
+        const location = findBestMatch(results, searchTerm);
+        const lat = parseFloat(location.lat);
+        const lng = parseFloat(location.lon);
+        const displayName = location.display_name;
+        
+        console.log(`✅ Location found: ${displayName} at ${lat}, ${lng}`);
+        
+        // Update map view with appropriate zoom level
+        if (weatherMap) {
+          const zoomLevel = getZoomLevel(location);
+          weatherMap.setView([lat, lng], zoomLevel);
+          
+          // Add marker
+          addSearchMarker(lat, lng, displayName, location);
+          
+          // Fetch weather for this location
+          await fetchWeatherByCoordinates(lat, lng);
+        }
+        
+        statusDiv.textContent = `Found: ${displayName.split(',')[0]}`;
+        statusDiv.style.color = '#10b981';
+        
+      } catch (error) {
+        console.error('❌ Error searching location:', error);
+        statusDiv.textContent = 'Search failed. Please try again.';
+        statusDiv.style.color = '#ef4444';
+      }
+    }
+
+    // Find the best match from Nominatim results
+    function findBestMatch(results, searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      
+      // Score each result based on relevance
+      const scoredResults = results.map(result => {
+        let score = 0;
+        const displayName = result.display_name.toLowerCase();
+        const name = (result.name || '').toLowerCase();
+        const type = result.type || '';
+        
+        // Exact match gets highest score
+        if (displayName.includes(searchLower)) score += 10;
+        if (name.includes(searchLower)) score += 15;
+        
+        // Prefer cities, towns, villages
+        if (type === 'city' || type === 'town' || type === 'village') score += 5;
+        if (type === 'administrative') score += 3;
+        
+        // Prefer results with higher importance
+        score += (result.importance || 0) * 2;
+        
+        return { ...result, score };
+      });
+      
+      // Sort by score and return the best match
+      scoredResults.sort((a, b) => b.score - a.score);
+      return scoredResults[0];
+    }
+
+    // Get appropriate zoom level based on location type
+    function getZoomLevel(location) {
+      const type = location.type || '';
+      const importance = location.importance || 0;
+      
+      if (type === 'city' || importance > 0.8) return 12;
+      if (type === 'town' || importance > 0.6) return 13;
+      if (type === 'village' || importance > 0.4) return 14;
+      if (type === 'hamlet' || importance > 0.2) return 15;
+      return 11; // Default zoom level
+    }
+
+    // Add search marker to map with enhanced location data
+    function addSearchMarker(lat, lng, displayName, locationData) {
+      if (weatherMap) {
+        // Clear existing search markers (keep weather markers)
+        weatherMap.eachLayer(function(layer) {
+          if (layer instanceof L.Marker && layer.options.icon && layer.options.icon.options.className === 'search-marker') {
+            weatherMap.removeLayer(layer);
+          }
+        });
+        
+        // Create custom icon for search marker
+        const searchIcon = L.divIcon({
+          className: 'search-marker',
+          html: '<div style="background: #3b82f6; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>',
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        });
+        
+        // Add search marker
+        const marker = L.marker([lat, lng], { icon: searchIcon }).addTo(weatherMap);
+        
+        // Create enhanced popup content
+        const locationType = locationData.type || 'Location';
+        const importance = locationData.importance ? Math.round(locationData.importance * 100) : 'N/A';
+        
+        const popupContent = `
+          <div style="text-align: center; min-width: 200px; max-width: 300px;">
+            <h3 style="margin: 0 0 10px 0; color: #3b82f6; font-size: 16px;">${displayName.split(',')[0]}</h3>
+            <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+              ${locationType.charAt(0).toUpperCase() + locationType.slice(1)}
+            </div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 5px;">
+              Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}
+            </div>
+            <div style="font-size: 11px; color: #9ca3af;">
+              Importance: ${importance}%
+            </div>
+          </div>
+        `;
+        
+        marker.bindPopup(popupContent).openPopup();
+      }
+    }
     
     // Remove profile photo
     async function removeProfilePhoto() {
@@ -1199,9 +1624,77 @@
     function loadUserEmail() {
       const savedEmail = localStorage.getItem('USER_EMAIL');
       if (savedEmail) {
-        document.getElementById('userEmail').textContent = `User: ${savedEmail}`;
-        document.getElementById('savedEmailText').textContent = savedEmail;
-        document.getElementById('savedEmail').classList.remove('hidden');
+        currentEmail = savedEmail;
+        updateEmailDisplay();
+        console.log('✅ Email loaded from localStorage:', savedEmail);
+      }
+    }
+
+    // Update email display
+    function updateEmailDisplay() {
+      const emailElement = document.getElementById('currentEmail');
+      if (emailElement) {
+        emailElement.textContent = currentEmail || 'Not set';
+      }
+    }
+
+    // Unified profile update function
+    function updateProfile() {
+      const newUsername = document.getElementById('usernameInput').value.trim();
+      const newEmail = document.getElementById('emailInput').value.trim();
+      
+      let hasUpdates = false;
+      let updateMessages = [];
+      
+      // Validate and update username
+      if (newUsername) {
+        if (newUsername.length < 2) {
+          alert('Username must be at least 2 characters long');
+          return;
+        }
+        
+        if (newUsername.length > 20) {
+          alert('Username must be less than 20 characters long');
+          return;
+        }
+        
+        if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
+          alert('Username can only contain letters, numbers, underscore (_), and hyphen (-)');
+          return;
+        }
+        
+        currentUsername = newUsername;
+        localStorage.setItem('USERNAME', currentUsername);
+        updateUsernameDisplay();
+        hasUpdates = true;
+        updateMessages.push(`Username: ${currentUsername}`);
+      }
+      
+      // Validate and update email
+      if (newEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newEmail)) {
+          alert('Please enter a valid email address');
+          return;
+        }
+        
+        currentEmail = newEmail;
+        localStorage.setItem('USER_EMAIL', currentEmail);
+        updateEmailDisplay();
+        hasUpdates = true;
+        updateMessages.push(`Email: ${currentEmail}`);
+      }
+      
+      if (hasUpdates) {
+        // Clear input fields
+        document.getElementById('usernameInput').value = '';
+        document.getElementById('emailInput').value = '';
+        
+        // Show success message
+        console.log('✅ Profile updated:', updateMessages.join(', '));
+        alert(`Profile updated successfully!\n${updateMessages.join('\n')}`);
+      } else {
+        alert('Please enter a username or email to update');
       }
     }
 
@@ -1333,5 +1826,8 @@
       }
     }, 30000);
   </script>
+  
+  <!-- Leaflet.js JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 </html>

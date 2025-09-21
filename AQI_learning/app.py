@@ -404,6 +404,60 @@ def get_profile_photo(username):
         print(f"❌ Error getting profile photo: {e}")
         return jsonify({"imageUrl": None})
 
+@app.route('/api/sensor-data', methods=['POST'])
+def receive_sensor_data():
+    """Receive sensor data from ESP32 device"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+        
+        # Extract sensor readings
+        pm10 = data.get('pm10')
+        pm25 = data.get('pm25')
+        co2 = data.get('co2')
+        humidity = data.get('humidity')
+        temperature = data.get('temperature')
+        device_id = data.get('device_id', 'ESP32_001')
+        
+        print(f"📡 Received sensor data from {device_id}:")
+        print(f"   PM10: {pm10}, PM2.5: {pm25}, CO2: {co2}")
+        print(f"   Temperature: {temperature}°C, Humidity: {humidity}%")
+        
+        # Update mock data with real ESP32 data
+        global mock_reading
+        mock_reading.update({
+            'pm10': pm10 if pm10 is not None else mock_reading['pm10'],
+            'pm25': pm25 if pm25 is not None else mock_reading['pm25'],
+            'co2': co2 if co2 is not None else mock_reading['co2'],
+            'humidity': humidity if humidity is not None else mock_reading['humidity'],
+            'temperature': temperature if temperature is not None else mock_reading['temperature'],
+            'timestamp': time.time()
+        })
+        
+        # Store in database if connected
+        if db_connected:
+            try:
+                cursor.execute("""
+                    INSERT INTO readings (pm10, pm25, co2, humidity, temperature, device_id, timestamp)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (pm10, pm25, co2, humidity, temperature, device_id, time.time()))
+                db.commit()
+                print("✅ Sensor data stored in database")
+            except Exception as e:
+                print(f"❌ Database error storing sensor data: {e}")
+        
+        return jsonify({
+            "status": "success",
+            "message": "Sensor data received and processed",
+            "timestamp": time.time()
+        })
+        
+    except Exception as e:
+        print(f"❌ Error processing sensor data: {e}")
+        return jsonify({"error": "Failed to process sensor data"}), 500
+
 # ✅ Create unified readings endpoints expected by the frontend
 @app.route('/readings', methods=['POST'])
 def create_reading():
@@ -534,19 +588,27 @@ def secure_data():
 def get_weather():
     """Fetch weather data from OpenWeatherMap API"""
     city = request.args.get('city')
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
     
-    # Check if city parameter is provided
-    if not city:
-        return jsonify({"error": "City parameter is required"}), 404
+    # Check if city parameter or coordinates are provided
+    if not city and not (lat and lon):
+        return jsonify({"error": "City parameter or lat/lon coordinates are required"}), 404
     
     try:
         # Make API call to OpenWeatherMap
         url = f"http://api.openweathermap.org/data/2.5/weather"
         params = {
-            'q': city,
             'appid': OWM_API_KEY,
             'units': 'metric'
         }
+        
+        # Add city or coordinates to params
+        if lat and lon:
+            params['lat'] = lat
+            params['lon'] = lon
+        else:
+            params['q'] = city
         
         response = requests.get(url, params=params, timeout=10)
         
