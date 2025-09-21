@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Air Quality Dashboard</title>
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
+      background: #f5f6fa; 
+      margin: 0; 
+      padding: 20px;
+    }
+    .container { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+    }
+    h1 { 
+      font-size: 36px; 
+      margin: 0 0 20px; 
+      color: #2c3e50;
+    }
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 30px; 
+    }
+    .auth-section { 
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+    }
+    .badge { 
+      padding: 8px 12px; 
+      border-radius: 999px; 
+      background: #eee; 
+      color: #333; 
+      font-weight: 600; 
+    }
+    .badge.connected { 
+      background: #e6ffed; 
+      color: #047857; 
+      border: 1px solid #a7f3d0; 
+    }
+    .badge.disconnected { 
+      background: #fee2e2; 
+      color: #b91c1c; 
+      border: 1px solid #fecaca; 
+    }
+    button { 
+      padding: 8px 14px; 
+      border-radius: 8px; 
+      border: 1px solid #d1d5db; 
+      background: #fff; 
+      cursor: pointer; 
+      font-weight: 500;
+    }
+    button:hover { 
+      background: #f9fafb; 
+    }
+    button.primary { 
+      background: #3b82f6; 
+      color: white; 
+      border: 1px solid #3b82f6; 
+    }
+    button.primary:hover { 
+      background: #2563eb; 
+    }
+    button.danger { 
+      background: #ef4444; 
+      color: white; 
+      border: 1px solid #ef4444; 
+    }
+    button.danger:hover { 
+      background: #dc2626; 
+    }
+    .card { 
+      background: #fff; 
+      border: 1px solid #e5e7eb; 
+      border-radius: 12px; 
+      padding: 20px; 
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04); 
+      margin-bottom: 20px;
+    }
+    .grid { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px; 
+    }
+    .weather-grid { 
+      display: grid; 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 12px; 
+    }
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 8px;
+    }
+    .metric-row h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    .metric-row .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    .metric { 
+      background: #fafafa; 
+      border: 1px solid #eee; 
+      border-radius: 10px; 
+      padding: 16px; 
+      text-align: center; 
+    }
+    .metric h3 { 
+      margin: 0 0 8px; 
+      font-size: 14px; 
+      color: #6b7280; 
+    }
+    .metric div { 
+      font-size: 22px; 
+      font-weight: 700; 
+    }
+    .login-form { 
+      max-width: 400px; 
+      margin: 50px auto; 
+      text-align: center; 
+    }
+    .login-form h2 { 
+      color: #2c3e50; 
+      margin-bottom: 30px; 
+    }
+    .form-group { 
+      margin-bottom: 20px; 
+      text-align: left; 
+    }
+    .form-group label { 
+      display: block; 
+      margin-bottom: 5px; 
+      font-weight: 500; 
+      color: #374151; 
+    }
+    .form-group input { 
+      width: 100%; 
+      padding: 10px; 
+      border: 1px solid #d1d5db; 
+      border-radius: 6px; 
+      font-size: 16px; 
+    }
+    .form-group input:focus { 
+      outline: none; 
+      border-color: #3b82f6; 
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+    }
+    .input-group { 
+      display: flex; 
+      gap: 10px; 
+      align-items: center; 
+    }
+    .input-group input { 
+      flex: 1; 
+    }
+    .hidden { 
+      display: none; 
+    }
+    .status-bar { 
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+      margin-bottom: 20px; 
+    }
+    .user-info { 
+      color: #6b7280; 
+      font-size: 14px; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      border: 2px solid #e5e7eb;
+      overflow: hidden;
+      position: relative;
+    }
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+    .user-name {
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .user-city {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .email-section { 
+      margin-top: 20px; 
+    }
+    .saved-email { 
+      margin-top: 10px; 
+      padding: 10px; 
+      background: #f0f9ff; 
+      border: 1px solid #bae6fd; 
+      border-radius: 6px; 
+      color: #0369a1; 
+    }
+    
+    /* Dark Mode Styles */
+    .dark-mode {
+      background: #0f172a !important;
+      color: #f1f5f9 !important;
+    }
+    .dark-mode .card {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #f1f5f9 !important;
+    }
+    .dark-mode .metric-row {
+      background: #334155 !important;
+      border-color: #475569 !important;
+      color: #f1f5f9 !important;
+    }
+    .dark-mode .metric-row h3 {
+      color: #cbd5e1 !important;
+    }
+    .dark-mode .metric-row .value {
+      color: #f1f5f9 !important;
+    }
+    .dark-mode .badge.connected {
+      background: #065f46 !important;
+      color: #d1fae5 !important;
+      border-color: #10b981 !important;
+    }
+    .dark-mode .badge.disconnected {
+      background: #7f1d1d !important;
+      color: #fecaca !important;
+      border-color: #ef4444 !important;
+    }
+    .dark-mode button {
+      background: #374151 !important;
+      color: #f1f5f9 !important;
+      border-color: #4b5563 !important;
+    }
+    .dark-mode button:hover {
+      background: #4b5563 !important;
+    }
+    .dark-mode button.primary {
+      background: #3b82f6 !important;
+      color: white !important;
+    }
+    .dark-mode button.primary:hover {
+      background: #2563eb !important;
+    }
+    .dark-mode .form-group input {
+      background: #374151 !important;
+      color: #f1f5f9 !important;
+      border-color: #4b5563 !important;
+    }
+    .dark-mode .form-group input:focus {
+      border-color: #3b82f6 !important;
+    }
+    .dark-mode .user-avatar {
+      border-color: #4b5563 !important;
+    }
+    .dark-mode .saved-email {
+      background: #1e3a8a !important;
+      border-color: #3b82f6 !important;
+      color: #dbeafe !important;
+    }
+    .dark-mode .current-city {
+      background: #1e3a8a !important;
+      border-color: #3b82f6 !important;
+      color: #dbeafe !important;
+    }
+    .dark-mode .esp32-sensor-data {
+      background: #334155 !important;
+      border-color: #475569 !important;
+      color: #cbd5e1 !important;
+    }
+    .dark-mode .esp32-sensor-data h4 {
+      color: #94a3b8 !important;
+    }
+    
+    /* Theme Toggle Button */
+    .theme-toggle {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .theme-toggle:hover {
+      background: #e5e7eb;
+    }
+    .dark-mode .theme-toggle {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f1f5f9;
+    }
+    .dark-mode .theme-toggle:hover {
+      background: #4b5563;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header with Authentication -->
+    <div class="header">
+      <h1>Air Quality Dashboard</h1>
+      <div class="auth-section">
+        <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+          <span id="themeIcon">🌙</span>
+        </button>
+        <div id="userInfo" class="user-info hidden">
+          <div class="user-avatar" id="userAvatar" onclick="uploadProfilePhoto()" title="Click to upload profile photo">
+            <div class="avatar-placeholder" id="avatarPlaceholder">U</div>
+            <img id="avatarImage" src="" alt="Profile" style="display: none;">
+          </div>
+          <div class="user-details">
+            <div class="user-name" id="userName">User</div>
+            <div class="user-city" id="userCity">Delhi</div>
+          </div>
+          <button id="signOutBtn" class="danger" onclick="signOut()">Sign Out</button>
+        </div>
+        <div id="loginSection">
+          <div class="input-group">
+            <input type="text" id="usernameInput" placeholder="Username" />
+            <input type="password" id="passwordInput" placeholder="Password" />
+            <button class="primary" onclick="signIn()">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span id="status" class="badge disconnected">Backend Disconnected</span>
+      <button id="refresh" onclick="fetchLatest()">Refresh Data</button>
+      <button onclick="detectBackendPort()" style="background: #10b981; color: white;">Detect Backend</button>
+      <button onclick="connectToPort5000()" style="background: #3b82f6; color: white;">Connect to Port 5000</button>
+    </div>
+
+    <!-- Login/Registration Form (shown when not authenticated) -->
+    <div id="loginForm" class="login-form">
+      <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+        <button id="showLogin" class="primary" onclick="showLoginForm()" style="margin-right: 10px;">Sign In</button>
+        <button id="showRegister" onclick="showRegisterForm()" style="background: #6b7280; color: white;">Register</button>
+      </div>
+      
+      <!-- Login Form -->
+      <div id="loginSection">
+        <h2>Sign In</h2>
+        <p>Enter your credentials to access the dashboard.</p>
+        <div class="form-group">
+          <label for="loginUsername">Username:</label>
+          <input type="text" id="loginUsername" placeholder="Enter username" />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password:</label>
+          <input type="password" id="loginPassword" placeholder="Enter password" />
+        </div>
+        <button class="primary" onclick="handleLogin()">Sign In</button>
+      </div>
+      
+      <!-- Registration Form -->
+      <div id="registerSection" class="hidden">
+        <h2>Create Account</h2>
+        <p>Register to access the dashboard and set your city.</p>
+        <div class="form-group">
+          <label for="regUsername">Username:</label>
+          <input type="text" id="regUsername" placeholder="Choose a username" />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password:</label>
+          <input type="password" id="regPassword" placeholder="Choose a password (min 6 characters)" />
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Email (optional):</label>
+          <input type="email" id="regEmail" placeholder="Enter your email" />
+        </div>
+        <div class="form-group">
+          <label for="regCity">Your City:</label>
+          <input type="text" id="regCity" placeholder="Enter your city (e.g., Delhi)" value="Delhi" />
+        </div>
+        <button class="primary" onclick="handleRegister()">Create Account</button>
+      </div>
+    </div>
+
+    <!-- Dashboard (shown when authenticated) -->
+    <div id="dashboard" class="hidden">
+      <!-- ESP32 Device Status Card -->
+      <div class="card">
+        <h2 style="color: #3b82f6; margin-top: 0;">ESP32 Device Status</h2>
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="esp32Status" class="badge disconnected">Offline</div>
+            <span id="esp32LastSync">Last sync: Never</span>
+          </div>
+          <button class="primary" onclick="pingESP32()">Ping ESP32</button>
+        </div>
+        <div class="esp32-sensor-data" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+          <h4 style="margin: 0 0 10px 0; color: #64748b;">Sensor Data from ESP32</h4>
+          <div id="esp32SensorData" style="color: #64748b; font-style: italic;">
+            No data received from ESP32 device
+          </div>
+        </div>
+      </div>
+
+      <!-- AQI Data Card -->
+      <div class="card">
+        <h2 style="color: #3b82f6; margin-top: 0;">Live Air Quality of This Region</h2>
+        <div class="grid">
+          <div class="metric-row">
+            <h3>PM10 (Particulate Matter 10)</h3>
+            <div class="value" id="pm10">-</div>
+          </div>
+          <div class="metric-row">
+            <h3>PM2.5 (Fine Particulate Matter)</h3>
+            <div class="value" id="pm25">-</div>
+          </div>
+          <div class="metric-row">
+            <h3>CO2 (Carbon Dioxide)</h3>
+            <div class="value" id="co2">-</div>
+          </div>
+          <div class="metric-row">
+            <h3>Humidity</h3>
+            <div class="value" id="humidity">-</div>
+          </div>
+          <div class="metric-row">
+            <h3>Temperature</h3>
+            <div class="value" id="temperature">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Card -->
+      <div class="card">
+        <h2 style="color: #3b82f6; margin-top: 0;">Your Profile</h2>
+        
+        <!-- Profile Photo Section -->
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0 0 10px 0; color: #374151;">Profile Photo</h3>
+          <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <div class="user-avatar" id="profileAvatar" style="width: 60px; height: 60px; font-size: 24px;">
+              <div class="avatar-placeholder" id="profileAvatarPlaceholder">U</div>
+              <img id="profileAvatarImage" src="" alt="Profile" style="display: none;">
+            </div>
+            <div>
+              <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
+              <button class="primary" onclick="document.getElementById('photoInput').click()">Upload Photo</button>
+              <button onclick="removeProfilePhoto()" style="background: #ef4444; color: white; margin-left: 10px;">Remove</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- City Section -->
+        <div>
+          <h3 style="margin: 0 0 10px 0; color: #374151;">Your City</h3>
+          <div class="input-group" style="margin-bottom: 20px;">
+            <input type="text" id="userCityInput" placeholder="Enter your city" />
+            <button class="primary" onclick="updateUserCity()">Update My City</button>
+          </div>
+          <div id="currentCity" class="current-city" style="padding: 10px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; color: #0369a1;">
+            <strong>Current City:</strong> <span id="currentCityName">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weather Data Card -->
+      <div class="card">
+        <h2 style="color: #3b82f6; margin-top: 0;">Weather Information</h2>
+        <div class="input-group" style="margin-bottom: 20px;">
+          <input type="text" id="cityInput" placeholder="Enter city name (e.g., Delhi)" />
+          <button class="primary" onclick="fetchWeather()">Check Weather</button>
+        </div>
+        
+        <div class="weather-grid">
+          <div class="metric"><h3>City</h3><div id="weatherCity">-</div></div>
+          <div class="metric"><h3>Temperature</h3><div id="weatherTemp">-</div></div>
+          <div class="metric"><h3>Humidity</h3><div id="weatherHumidity">-</div></div>
+          <div class="metric"><h3>Wind Speed</h3><div id="weatherWind">-</div></div>
+        </div>
+      </div>
+
+      <!-- Email Storage Card -->
+      <div class="card">
+        <h2 style="color: #3b82f6; margin-top: 0;">User Profile</h2>
+        <div class="input-group">
+          <input type="email" id="emailInput" placeholder="Enter your email address" />
+          <button class="primary" onclick="saveEmail()">Save Email</button>
+        </div>
+        <div id="savedEmail" class="saved-email hidden">
+          <strong>Your email:</strong> <span id="savedEmailText"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let backendUrl = 'http://localhost:5000'; // Default port 5000, will be updated dynamically
+    let isAuthenticated = false;
+    let currentUser = null;
+    let isDarkMode = false;
+    let esp32LastPing = null;
+    let backendConnected = false;
+
+    // Initialize the application
+    window.addEventListener('DOMContentLoaded', function() {
+      initializeApp();
+    });
+
+    // Initialize application
+    function initializeApp() {
+      // Set OpenWeatherMap API key in localStorage if not already set
+      if (!localStorage.getItem('OWM_KEY')) {
+        localStorage.setItem('OWM_KEY', '0ed03441c5022238438f3b1788f82eb9');
+        console.log('✅ OpenWeatherMap API key set in localStorage');
+      }
+
+      // Initialize theme
+      initializeTheme();
+
+      // Check if user is already authenticated
+      const token = localStorage.getItem('ACCESS_TOKEN');
+      if (token) {
+        isAuthenticated = true;
+        // Try to get user data from token (simplified for now)
+        currentUser = { username: 'User', city: 'Delhi' };
+        showDashboard();
+        loadUserEmail();
+        updateUserDisplay();
+      } else {
+        showLoginForm();
+      }
+
+      // Try to detect backend port dynamically with retry
+      detectBackendPortWithRetry();
+    }
+
+    // Initialize theme from localStorage
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        enableDarkMode();
+      } else {
+        enableLightMode();
+      }
+    }
+
+    // Toggle theme between light and dark
+    function toggleTheme() {
+      if (isDarkMode) {
+        enableLightMode();
+      } else {
+        enableDarkMode();
+      }
+    }
+
+    // Enable dark mode
+    function enableDarkMode() {
+      isDarkMode = true;
+      document.body.classList.add('dark-mode');
+      document.getElementById('themeIcon').textContent = '☀️';
+      localStorage.setItem('theme', 'dark');
+      console.log('🌙 Dark mode enabled');
+    }
+
+    // Enable light mode
+    function enableLightMode() {
+      isDarkMode = false;
+      document.body.classList.remove('dark-mode');
+      document.getElementById('themeIcon').textContent = '🌙';
+      localStorage.setItem('theme', 'light');
+      console.log('☀️ Light mode enabled');
+    }
+
+    // Update ESP32 status based on backend connection
+    function updateESP32Status() {
+      if (backendConnected) {
+        // Check if we have recent readings (within last 5 minutes)
+        const now = new Date();
+        const lastReading = localStorage.getItem('lastReadingTime');
+        
+        if (lastReading) {
+          const timeDiff = now - new Date(lastReading);
+          if (timeDiff < 5 * 60 * 1000) { // 5 minutes
+            document.getElementById('esp32Status').textContent = 'Online';
+            document.getElementById('esp32Status').className = 'badge connected';
+            document.getElementById('esp32SensorData').textContent = 'Device sending data to backend';
+            document.getElementById('esp32LastSync').textContent = `Last sync: ${new Date(lastReading).toLocaleTimeString()}`;
+            return;
+          }
+        }
+      }
+      
+      // Default to offline if no recent data
+      document.getElementById('esp32Status').textContent = 'Offline';
+      document.getElementById('esp32Status').className = 'badge disconnected';
+      document.getElementById('esp32SensorData').textContent = 'No data received from ESP32 device';
+      document.getElementById('esp32LastSync').textContent = 'Last sync: Never';
+    }
+
+    // Ping ESP32 device
+    function pingESP32() {
+      console.log('📡 Pinging ESP32 device...');
+      
+      if (!backendConnected) {
+        alert('Backend not connected. Please connect to backend first.');
+        return;
+      }
+      
+      // Update UI immediately
+      document.getElementById('esp32Status').textContent = 'Pinging...';
+      document.getElementById('esp32Status').className = 'badge';
+      
+      // Try to get latest readings from backend
+      fetchLatest().then(() => {
+        // Update ESP32 status after getting readings
+        updateESP32Status();
+        console.log('✅ ESP32 ping completed');
+      }).catch(() => {
+        // If readings fail, mark as offline
+        document.getElementById('esp32Status').textContent = 'Offline';
+        document.getElementById('esp32Status').className = 'badge disconnected';
+        document.getElementById('esp32SensorData').textContent = 'No data received from ESP32 device';
+        console.log('❌ ESP32 device is offline');
+      });
+    }
+
+    // Detect backend with retry mechanism
+    async function detectBackendPortWithRetry() {
+      console.log('🔄 Starting backend detection with retry...');
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log(`Attempt ${attempt}/3: Detecting backend...`);
+        await detectBackendPort();
+        
+        if (backendUrl && backendUrl.includes('localhost')) {
+          console.log('✅ Backend detected successfully');
+          backendConnected = true;
+          updateESP32Status();
+          return;
+        }
+        
+        if (attempt < 3) {
+          console.log(`⏳ Waiting 2 seconds before retry...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+      
+      console.log('❌ Backend detection failed after 3 attempts');
+      backendConnected = false;
+      updateStatus('Backend not found - Click "Connect to Port 5000"', 'disconnected');
+    }
+
+    // Detect backend port by trying common ports (prioritizing 5000)
+    async function detectBackendPort() {
+      // Try port 5000 first (where backend is actually running), then other common ports
+      const commonPorts = [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008, 5009, 5010];
+      
+      console.log('🔍 Scanning for backend on available ports...');
+      console.log('   Prioritizing port 5000...');
+      
+      for (const port of commonPorts) {
+        try {
+          console.log(`   Trying port ${port}...`);
+          const response = await fetch(`http://localhost:${port}/health`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(2000)
+          });
+          
+          if (response.ok) {
+            backendUrl = `http://localhost:${port}`;
+            console.log(`✅ Backend detected on port ${port}`);
+            updateStatus(`Backend Connected (Port ${port})`, 'connected');
+            if (isAuthenticated) {
+              fetchLatest();
+            }
+            return;
+          }
+        } catch (error) {
+          // Port not available, try next
+          console.log(`   Port ${port} not available`);
+        }
+      }
+      
+      console.log('⚠️ Backend not detected on common ports');
+      console.log('💡 Make sure the Flask backend is running on port 5000');
+      updateStatus('Backend Disconnected - Start Flask backend', 'disconnected');
+    }
+
+    // Update status display
+    function updateStatus(text, className) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = text;
+      statusEl.className = `badge ${className}`;
+    }
+
+    // Connect directly to port 5000
+    async function connectToPort5000() {
+      console.log('🔗 Connecting directly to port 5000...');
+      backendUrl = 'http://localhost:5000';
+      
+      try {
+        const response = await fetch(`${backendUrl}/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(3000)
+        });
+        
+        if (response.ok) {
+          console.log('✅ Successfully connected to port 5000');
+          updateStatus('Backend Connected (Port 5000)', 'connected');
+          if (isAuthenticated) {
+            fetchLatest();
+          }
+        } else {
+          throw new Error(`HTTP ${response.status}`);
+        }
+      } catch (error) {
+        console.error('❌ Failed to connect to port 5000:', error);
+        updateStatus('Port 5000 not available', 'disconnected');
+      }
+    }
+
+    // Show login form
+    function showLoginForm() {
+      document.getElementById('loginForm').classList.remove('hidden');
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('userInfo').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+      document.getElementById('registerSection').classList.add('hidden');
+      document.getElementById('showLogin').classList.add('primary');
+      document.getElementById('showRegister').classList.remove('primary');
+    }
+
+    // Show registration form
+    function showRegisterForm() {
+      document.getElementById('loginForm').classList.remove('hidden');
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('userInfo').classList.add('hidden');
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('registerSection').classList.remove('hidden');
+      document.getElementById('showLogin').classList.remove('primary');
+      document.getElementById('showRegister').classList.add('primary');
+    }
+
+    // Show dashboard
+    function showDashboard() {
+      document.getElementById('loginForm').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('userInfo').classList.remove('hidden');
+      document.getElementById('loginSection').classList.add('hidden');
+    }
+
+    // Handle registration
+    async function handleRegister() {
+      const username = document.getElementById('regUsername').value;
+      const password = document.getElementById('regPassword').value;
+      const email = document.getElementById('regEmail').value;
+      const city = document.getElementById('regCity').value;
+
+      if (!username || !password) {
+        alert('Please enter username and password');
+        return;
+      }
+
+      if (username.length < 3) {
+        alert('Username must be at least 3 characters');
+        return;
+      }
+
+      if (password.length < 6) {
+        alert('Password must be at least 6 characters');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password, email, city }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Registration failed');
+        }
+
+        alert('Registration successful! Please sign in.');
+        
+        // Clear form and switch to login
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regPassword').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regCity').value = 'Delhi';
+        
+        showLoginForm();
+        console.log('✅ Registration successful');
+      } catch (error) {
+        console.error('Registration error:', error);
+        alert(`Registration failed: ${error.message}`);
+      }
+    }
+
+    // Handle login
+    async function handleLogin() {
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+
+      if (!username || !password) {
+        alert('Please enter both username and password');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Login failed');
+        }
+
+        localStorage.setItem('ACCESS_TOKEN', data.access_token);
+        currentUser = data.user;
+        isAuthenticated = true;
+        
+        // Clear form
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        
+        // Update user info display
+        updateUserDisplay();
+        
+        showDashboard();
+        fetchLatest();
+        
+        console.log('✅ Login successful');
+      } catch (error) {
+        console.error('Login error:', error);
+        alert(`Login failed: ${error.message}`);
+      }
+    }
+
+    // Sign in (alternative method)
+    async function signIn() {
+      const username = document.getElementById('usernameInput').value;
+      const password = document.getElementById('passwordInput').value;
+
+      if (!username || !password) {
+        alert('Please enter both username and password');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Login failed');
+        }
+
+        const data = await response.json();
+        localStorage.setItem('ACCESS_TOKEN', data.access_token);
+        isAuthenticated = true;
+        
+        // Clear form
+        document.getElementById('usernameInput').value = '';
+        document.getElementById('passwordInput').value = '';
+        
+        showDashboard();
+        fetchLatest();
+        
+        console.log('✅ Sign in successful');
+      } catch (error) {
+        console.error('Sign in error:', error);
+        alert('Sign in failed. Please check your credentials. Use username "admin" with password "pass"');
+      }
+    }
+
+    // Sign out
+    function signOut() {
+      localStorage.removeItem('ACCESS_TOKEN');
+      localStorage.removeItem('USER_EMAIL');
+      isAuthenticated = false;
+      currentUser = null;
+      showLoginForm();
+      console.log('✅ Signed out successfully');
+    }
+
+    // Generate user avatar
+    function generateAvatar(username) {
+      if (!username) return 'U';
+      return username.charAt(0).toUpperCase();
+    }
+
+    // Generate avatar color based on username
+    function getAvatarColor(username) {
+      if (!username) return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      
+      const colors = [
+        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+        'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+        'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+        'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+      ];
+      
+      let hash = 0;
+      for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+
+    // Update user display
+    function updateUserDisplay() {
+      if (currentUser) {
+        // Update header user info
+        document.getElementById('userName').textContent = currentUser.username;
+        document.getElementById('userCity').textContent = currentUser.city;
+        
+        // Update avatars
+        updateUserAvatar(currentUser.username);
+        loadProfilePhoto(); // Load from server
+        
+        // Update dashboard city info
+        document.getElementById('currentCityName').textContent = currentUser.city;
+        document.getElementById('userCityInput').value = currentUser.city;
+      }
+    }
+
+    // Update user avatar with profile photo support
+    function updateUserAvatar(username, serverImageUrl = null) {
+      const avatarImage = document.getElementById('avatarImage');
+      const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+      const avatar = document.getElementById('userAvatar');
+      
+      // Check for server image URL first, then localStorage
+      const profilePhoto = serverImageUrl || localStorage.getItem(`profile_photo_${username}`);
+      
+      if (profilePhoto) {
+        // Show profile photo
+        avatarImage.src = profilePhoto;
+        avatarImage.style.display = 'block';
+        avatarPlaceholder.style.display = 'none';
+      } else {
+        // Show placeholder with user initial
+        avatarImage.style.display = 'none';
+        avatarPlaceholder.style.display = 'flex';
+        avatarPlaceholder.textContent = generateAvatar(username);
+        avatarPlaceholder.style.background = getAvatarColor(username);
+      }
+    }
+
+    // Handle photo upload
+    async function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+      
+      try {
+        console.log('📸 Uploading profile photo...');
+        
+        // Create FormData
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('username', currentUser.username);
+        
+        // Upload to backend
+        const response = await fetch(`${backendUrl}/upload-photo`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Photo uploaded:', result);
+        
+        // Update profile avatar
+        updateProfileAvatar(result.imageUrl);
+        
+        // Update header avatar
+        updateUserAvatar(currentUser.username);
+        
+        alert('Profile photo uploaded successfully!');
+        
+      } catch (error) {
+        console.error('❌ Photo upload error:', error);
+        alert('Failed to upload photo. Please try again.');
+      }
+    }
+    
+    // Update profile avatar display
+    function updateProfileAvatar(imageUrl) {
+      const profileAvatarImage = document.getElementById('profileAvatarImage');
+      const profileAvatarPlaceholder = document.getElementById('profileAvatarPlaceholder');
+      
+      if (imageUrl) {
+        profileAvatarImage.src = imageUrl;
+        profileAvatarImage.style.display = 'block';
+        profileAvatarPlaceholder.style.display = 'none';
+      } else {
+        profileAvatarImage.style.display = 'none';
+        profileAvatarPlaceholder.style.display = 'flex';
+        profileAvatarPlaceholder.textContent = generateAvatar(currentUser.username);
+        profileAvatarPlaceholder.style.background = getAvatarColor(currentUser.username);
+      }
+    }
+    
+    // Load profile photo from server
+    async function loadProfilePhoto() {
+      if (!currentUser || !backendConnected) return;
+      
+      try {
+        const response = await fetch(`${backendUrl}/get-profile-photo/${currentUser.username}`);
+        const data = await response.json();
+        
+        if (data.imageUrl) {
+          updateProfileAvatar(data.imageUrl);
+          // Also update header avatar
+          updateUserAvatar(currentUser.username, data.imageUrl);
+        }
+      } catch (error) {
+        console.error('❌ Error loading profile photo:', error);
+      }
+    }
+    
+    // Remove profile photo
+    async function removeProfilePhoto() {
+      if (!confirm('Are you sure you want to remove your profile photo?')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${backendUrl}/remove-photo`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username: currentUser.username })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Remove failed: ${response.status}`);
+        }
+        
+        // Update displays
+        updateProfileAvatar(null);
+        updateUserAvatar(currentUser.username);
+        
+        console.log('✅ Profile photo removed');
+        alert('Profile photo removed successfully!');
+        
+      } catch (error) {
+        console.error('❌ Photo remove error:', error);
+        alert('Failed to remove photo. Please try again.');
+      }
+    }
+
+    // Update user city
+    async function updateUserCity() {
+      const newCity = document.getElementById('userCityInput').value;
+      
+      if (!newCity) {
+        alert('Please enter a city name');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}/update-city`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`
+          },
+          body: JSON.stringify({ city: newCity }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to update city');
+        }
+
+        // Update current user data
+        if (currentUser) {
+          currentUser.city = newCity;
+          updateUserDisplay();
+        }
+        
+        alert('City updated successfully!');
+        console.log('✅ City updated successfully');
+      } catch (error) {
+        console.error('City update error:', error);
+        alert(`Failed to update city: ${error.message}`);
+      }
+    }
+
+    // Save email
+    function saveEmail() {
+      const email = document.getElementById('emailInput').value;
+      
+      if (!email) {
+        alert('Please enter an email address');
+        return;
+      }
+
+      if (!isValidEmail(email)) {
+        alert('Please enter a valid email address');
+        return;
+      }
+
+      localStorage.setItem('USER_EMAIL', email);
+      loadUserEmail();
+      document.getElementById('emailInput').value = '';
+      
+      console.log('✅ Email saved successfully');
+    }
+
+    // Load user email
+    function loadUserEmail() {
+      const savedEmail = localStorage.getItem('USER_EMAIL');
+      if (savedEmail) {
+        document.getElementById('userEmail').textContent = `User: ${savedEmail}`;
+        document.getElementById('savedEmailText').textContent = savedEmail;
+        document.getElementById('savedEmail').classList.remove('hidden');
+      }
+    }
+
+    // Validate email
+    function isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    // Fetch latest AQI data
+    async function fetchLatest() {
+      if (!isAuthenticated) {
+        console.log('⚠️ User not authenticated, skipping data fetch');
+        return;
+      }
+
+      try {
+        updateStatus('Checking...', '');
+        console.log(`🔄 Fetching data from ${backendUrl}/readings`);
+        
+        const response = await fetch(`${backendUrl}/readings`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.log('🔐 Authentication expired, signing out');
+            signOut();
+            return;
+          }
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('📊 Received data:', data);
+        
+        // Update AQI data display with units
+        document.getElementById('pm10').textContent = data.pm10 ? `${data.pm10} μg/m³` : '-';
+        document.getElementById('pm25').textContent = data.pm25 ? `${data.pm25} μg/m³` : '-';
+        document.getElementById('co2').textContent = data.co2 ? `${data.co2} ppm` : '-';
+        document.getElementById('humidity').textContent = data.humidity ? `${data.humidity}%` : '-';
+        document.getElementById('temperature').textContent = data.temperature ? `${data.temperature}°C` : '-';
+
+        updateStatus(`Backend Connected (Port ${backendUrl.split(':').pop()})`, 'connected');
+        backendConnected = true;
+        
+        // Store reading time for ESP32 status
+        localStorage.setItem('lastReadingTime', new Date().toISOString());
+        
+        // Update ESP32 status
+        updateESP32Status();
+        
+        console.log('✅ AQI data fetched successfully');
+      } catch (error) {
+        console.error('❌ AQI data fetch error:', error);
+        backendConnected = false;
+        if (error.name === 'AbortError') {
+          updateStatus('Backend Timeout - Check connection', 'disconnected');
+        } else {
+          updateStatus('Backend Disconnected - Check if running', 'disconnected');
+        }
+        updateESP32Status();
+      }
+    }
+
+    // Fetch weather data
+    async function fetchWeather() {
+      const city = document.getElementById('cityInput').value;
+      
+      if (!city) {
+        alert('Please enter a city name');
+        return;
+      }
+
+      try {
+        console.log(`🌤️ Fetching weather for ${city} from ${backendUrl}/weather...`);
+        
+        const response = await fetch(`${backendUrl}/weather?city=${encodeURIComponent(city)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(10000) // 10 second timeout for weather API
+        });
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('City not found. Please check the city name.');
+          } else if (response.status === 500) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Weather service error');
+          } else {
+            throw new Error(`Weather API error: ${response.status}`);
+          }
+        }
+
+        const data = await response.json();
+        console.log('🌤️ Weather data received:', data);
+        
+        // Update weather display
+        document.getElementById('weatherCity').textContent = data.city || city;
+        document.getElementById('weatherTemp').textContent = data.temperature ? `${Math.round(data.temperature)}°C` : '-';
+        document.getElementById('weatherHumidity').textContent = data.humidity ? `${data.humidity}%` : '-';
+        document.getElementById('weatherWind').textContent = data.wind ? `${data.wind} m/s` : '-';
+        
+        // Clear input
+        document.getElementById('cityInput').value = '';
+        
+        console.log('✅ Weather data fetched successfully');
+      } catch (error) {
+        console.error('❌ Weather fetch error:', error);
+        if (error.name === 'AbortError') {
+          alert('Weather request timed out. Please try again.');
+        } else {
+          alert(`Failed to fetch weather data: ${error.message}`);
+        }
+      }
+    }
+
+    // Auto-refresh data every 30 seconds when authenticated
+    setInterval(() => {
+      if (isAuthenticated) {
+        fetchLatest();
+      }
+    }, 30000);
+  </script>
+</body>
+</html>
