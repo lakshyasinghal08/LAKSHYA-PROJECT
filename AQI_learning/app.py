@@ -696,4 +696,4 @@ if __name__ == '__main__':
         print(f"⚠️ Could not open frontend automatically: {e}")
         print("   Please open index.html manually in your browser")
     
-    app.run(port=port, debug=True)
+    app.run(port=5000, debug=True)

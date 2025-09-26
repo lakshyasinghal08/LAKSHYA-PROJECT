@@ -12,13 +12,13 @@ echo Waiting for backends to start...
 timeout /t 5 /nobreak > nul
 
 echo Starting Frontend Server...
-start "Frontend Server" cmd /k "cd /d C:\Users\singh\OneDrive\Desktop\AQI_data\demo_aqi && set PORT=0 && npm run dev"
+start "Frontend Server" cmd /k "cd /d C:\Users\singh\OneDrive\Desktop\AQI_data\demo_aqi && npm run dev"
 
 echo.
 echo All servers are starting...
-echo Flask Backend: Dynamic port (check console output)
+echo Flask Backend: http://localhost:4000
 echo FastAPI Backend: http://localhost:5001
-echo Frontend: Dynamic port (check console output)
+echo Frontend: http://localhost:4008
 echo.
 echo Press any key to exit...
 pause > nul

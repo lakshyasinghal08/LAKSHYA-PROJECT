@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 interface WeatherMapProps {
   city?: string;
+  onDataFetched?: (success: boolean) => void;
 }
 
 interface WeatherData {
@@ -24,6 +25,57 @@ interface WeatherData {
     lat: number;
     lon: number;
   };
+}
+
+interface AirQualityData {
+  list?: Array<{
+    main: {
+      aqi: number;
+    };
+    components: {
+      co: number;
+      no: number;
+      no2: number;
+      o3: number;
+      so2: number;
+      pm2_5: number;
+      pm10: number;
+      nh3: number;
+    };
+  }>;
+}
+
+interface OneCallData {
+  current?: {
+    temp: number;
+    feels_like: number;
+    humidity: number;
+    wind_speed: number;
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
+  };
+  hourly?: Array<{
+    dt: number;
+    temp: number;
+    weather: Array<{
+      icon: string;
+    }>;
+  }>;
+  daily?: Array<{
+    dt: number;
+    temp: {
+      day: number;
+      min: number;
+      max: number;
+    };
+    weather: Array<{
+      icon: string;
+      description: string;
+    }>;
+  }>;
 }
 
 interface Coordinates {
@@ -194,10 +246,10 @@ const WeatherMap: React.FC<WeatherMapProps> = ({ city = 'Delhi' }) => {
   const mapContainerStyle = {
     marginTop: '30px',
     padding: '25px',
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.cardBg || '#ffffff',
     borderRadius: '15px',
-    boxShadow: colors.cardShadow,
-    border: `2px solid ${colors.accent}`,
+    boxShadow: colors.cardShadow || '0 4px 8px rgba(0,0,0,0.1)',
+    border: `2px solid ${colors.accent || '#ff69b4'}`,
     transition: 'all 0.3s ease',
   };
 
@@ -300,19 +352,6 @@ const WeatherMap: React.FC<WeatherMapProps> = ({ city = 'Delhi' }) => {
         </div>
       ) : (
         <>
-          <form onSubmit={handleSearch} style={searchBoxStyle}>
-            <input
-              type="text"
-              value={inputCity}
-              onChange={(e) => setInputCity(e.target.value)}
-              placeholder="Enter city name..."
-              style={inputStyle}
-            />
-            <button type="submit" style={buttonStyle}>
-              Check Weather
-            </button>
-          </form>
-          
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
             <button 
               onClick={() => setShowApiKeyInput(true)} 

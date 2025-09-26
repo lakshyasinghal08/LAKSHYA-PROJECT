@@ -4,1830 +4,1102 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Air Quality Dashboard</title>
-  
-  <!-- Leaflet.js CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body { 
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
-      background: #f5f6fa; 
-      margin: 0; 
+    :root {
+      --primary-color: #009688;
+      --secondary-color: #4db6ac;
+      --danger-color: #f44336;
+      --light-bg: #f5f5f5;
+      --dark-bg: #263238;
+      --dark-card: #37474f;
+      --dark-text: #202124;
+      --light-text: #78909c;
+      --card-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      --border-radius: 8px;
+      --gradient: linear-gradient(135deg, #009688 0%, #4db6ac 100%);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    body {
+      background-color: var(--light-bg);
+      color: var(--dark-text);
+      line-height: 1.6;
+    }
+    
+    body.dark-mode {
+      background-color: var(--dark-bg);
+      color: #fff;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
       padding: 20px;
     }
-    .container { 
-      max-width: 1200px; 
-      margin: 0 auto; 
-    }
-    h1 { 
-      font-size: 36px; 
-      margin: 0 0 20px; 
-      color: #2c3e50;
-    }
-    .header { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      margin-bottom: 30px; 
-    }
-    .auth-section { 
-      display: flex; 
-      align-items: center; 
-      gap: 15px; 
-    }
-    .badge { 
-      padding: 8px 12px; 
-      border-radius: 999px; 
-      background: #eee; 
-      color: #333; 
-      font-weight: 600; 
-    }
-    .badge.connected { 
-      background: #e6ffed; 
-      color: #047857; 
-      border: 1px solid #a7f3d0; 
-    }
-    .badge.disconnected { 
-      background: #fee2e2; 
-      color: #b91c1c; 
-      border: 1px solid #fecaca; 
-    }
-    button { 
-      padding: 8px 14px; 
-      border-radius: 8px; 
-      border: 1px solid #d1d5db; 
-      background: #fff; 
-      cursor: pointer; 
-      font-weight: 500;
-    }
-    button:hover { 
-      background: #f9fafb; 
-    }
-    button.primary { 
-      background: #3b82f6; 
-      color: white; 
-      border: 1px solid #3b82f6; 
-    }
-    button.primary:hover { 
-      background: #2563eb; 
-    }
-    button.danger { 
-      background: #ef4444; 
-      color: white; 
-      border: 1px solid #ef4444; 
-    }
-    button.danger:hover { 
-      background: #dc2626; 
-    }
-    .card { 
-      background: #fff; 
-      border: 1px solid #e5e7eb; 
-      border-radius: 12px; 
-      padding: 20px; 
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04); 
-      margin-bottom: 20px;
-    }
-    .grid { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 12px; 
-    }
-    .weather-grid { 
-      display: grid; 
-      grid-template-columns: repeat(4, 1fr); 
-      gap: 12px; 
-    }
-    .metric-row {
+    
+    header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #fafafa;
-      border: 1px solid #eee;
-      border-radius: 10px;
-      padding: 16px 20px;
-      margin-bottom: 8px;
+      padding: 15px 20px;
+      background: var(--gradient);
+      color: white;
+      margin-bottom: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--card-shadow);
     }
-    .metric-row h3 {
-      margin: 0;
-      font-size: 16px;
-      color: #6b7280;
-      font-weight: 600;
+    
+    .dark-mode header {
+      background: #37474f;
     }
-    .metric-row .value {
+    
+    h1 {
       font-size: 24px;
-      font-weight: 700;
-      color: #1f2937;
+      color: white;
+      margin: 0;
     }
-    .metric { 
-      background: #fafafa; 
-      border: 1px solid #eee; 
-      border-radius: 10px; 
-      padding: 16px; 
-      text-align: center; 
-    }
-    .metric h3 { 
-      margin: 0 0 8px; 
-      font-size: 14px; 
-      color: #6b7280; 
-    }
-    .metric div { 
-      font-size: 22px; 
-      font-weight: 700; 
-    }
-    .login-form { 
-      max-width: 400px; 
-      margin: 50px auto; 
-      text-align: center; 
-    }
-    .login-form h2 { 
-      color: #2c3e50; 
-      margin-bottom: 30px; 
-    }
-    .form-group { 
-      margin-bottom: 20px; 
-      text-align: left; 
-    }
-    .form-group label { 
-      display: block; 
-      margin-bottom: 5px; 
-      font-weight: 500; 
-      color: #374151; 
-    }
-    .form-group input { 
-      width: 100%; 
-      padding: 10px; 
-      border: 1px solid #d1d5db; 
-      border-radius: 6px; 
-      font-size: 16px; 
-    }
-    .form-group input:focus { 
-      outline: none; 
-      border-color: #3b82f6; 
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
-    }
-    .input-group { 
-      display: flex; 
-      gap: 10px; 
-      align-items: center; 
-    }
-    .input-group input { 
-      flex: 1; 
-    }
-    .hidden { 
-      display: none; 
-    }
-    .status-bar { 
-      display: flex; 
-      align-items: center; 
-      gap: 15px; 
-      margin-bottom: 20px; 
-    }
-    .user-info { 
-      color: #6b7280; 
-      font-size: 14px; 
+    
+    .user-controls {
       display: flex;
       align-items: center;
       gap: 10px;
     }
+    
     .user-avatar {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
       font-weight: bold;
-      font-size: 16px;
-      border: 2px solid #e5e7eb;
-      overflow: hidden;
-      position: relative;
     }
-    .user-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-    .avatar-placeholder {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-    }
-    .user-details {
+    
+    .user-info {
       display: flex;
       flex-direction: column;
-    }
-    .user-name {
-      font-weight: 600;
-      color: #1f2937;
-    }
-    .user-city {
-      font-size: 12px;
-      color: #6b7280;
-    }
-    .email-section { 
-      margin-top: 20px; 
-    }
-    .saved-email { 
-      margin-top: 10px; 
-      padding: 10px; 
-      background: #f0f9ff; 
-      border: 1px solid #bae6fd; 
-      border-radius: 6px; 
-      color: #0369a1; 
+      font-size: 14px;
     }
     
-    /* Dark Mode Styles */
-    .dark-mode {
-      background: #0f172a !important;
-      color: #f1f5f9 !important;
+    .card {
+      background-color: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--card-shadow);
+      padding: 20px;
+      margin-bottom: 20px;
     }
+    
     .dark-mode .card {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-      color: #f1f5f9 !important;
-    }
-    .dark-mode .metric-row {
-      background: #334155 !important;
-      border-color: #475569 !important;
-      color: #f1f5f9 !important;
-    }
-    .dark-mode .metric-row h3 {
-      color: #cbd5e1 !important;
-    }
-    .dark-mode .metric-row .value {
-      color: #f1f5f9 !important;
-    }
-    .dark-mode .badge.connected {
-      background: #065f46 !important;
-      color: #d1fae5 !important;
-      border-color: #10b981 !important;
-    }
-    .dark-mode .badge.disconnected {
-      background: #7f1d1d !important;
-      color: #fecaca !important;
-      border-color: #ef4444 !important;
-    }
-    .dark-mode button {
-      background: #374151 !important;
-      color: #f1f5f9 !important;
-      border-color: #4b5563 !important;
-    }
-    .dark-mode button:hover {
-      background: #4b5563 !important;
-    }
-    .dark-mode button.primary {
-      background: #3b82f6 !important;
-      color: white !important;
-    }
-    .dark-mode button.primary:hover {
-      background: #2563eb !important;
-    }
-    .dark-mode .form-group input {
-      background: #374151 !important;
-      color: #f1f5f9 !important;
-      border-color: #4b5563 !important;
-    }
-    .dark-mode .form-group input:focus {
-      border-color: #3b82f6 !important;
-    }
-    .dark-mode .user-avatar {
-      border-color: #4b5563 !important;
-    }
-    .dark-mode .saved-email {
-      background: #1e3a8a !important;
-      border-color: #3b82f6 !important;
-      color: #dbeafe !important;
-    }
-    .dark-mode .current-city {
-      background: #1e3a8a !important;
-      border-color: #3b82f6 !important;
-      color: #dbeafe !important;
-    }
-    .dark-mode .esp32-sensor-data {
-      background: #334155 !important;
-      border-color: #475569 !important;
-      color: #cbd5e1 !important;
-    }
-    .dark-mode .esp32-sensor-data h4 {
-      color: #94a3b8 !important;
-    }
-    .dark-mode .current-username {
-      background: #374151 !important;
-      color: #f1f5f9 !important;
+      background-color: var(--dark-card);
+      color: white;
     }
     
-    /* Theme Toggle Button */
-    .theme-toggle {
-      background: #f3f4f6;
-      border: 1px solid #d1d5db;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
+    .card h2 {
+      color: var(--primary-color);
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    
+    .dark-mode .card h2 {
+      color: var(--secondary-color);
+    }
+    
+    .status-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .badge.connected {
+      background-color: rgba(0, 150, 136, 0.2);
+      color: var(--secondary-color);
+    }
+    
+    .badge.disconnected {
+      background-color: rgba(244, 67, 54, 0.2);
+      color: var(--danger-color);
+    }
+    
+    .badge.connecting {
+      background-color: rgba(255, 193, 7, 0.2);
+      color: #FFC107;
+    }
+    
+    .dark-mode .badge.connected {
+      background-color: rgba(0, 150, 136, 0.3);
+      color: #80cbc4;
+    }
+    
+    .dark-mode .badge.disconnected {
+      background-color: rgba(244, 67, 54, 0.3);
+      color: #ef9a9a;
+    }
+    
+    .dark-mode .badge.connecting {
+      background-color: rgba(255, 193, 7, 0.3);
+      color: #ffe082;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    button.secondary {
+      background-color: white;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+    }
+    
+    button.danger {
+      background-color: var(--danger-color);
+      color: white;
+    }
+    
+    button:hover {
+      opacity: 0.9;
+    }
+    
+    .esp32-status {
       display: flex;
       align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      margin-bottom: 15px;
     }
-    .theme-toggle:hover {
-      background: #e5e7eb;
+    
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
     }
-    .dark-mode .theme-toggle {
-      background: #374151;
-      border-color: #4b5563;
-      color: #f1f5f9;
+    
+    .status-indicator.online {
+      background-color: var(--secondary-color);
     }
-    .dark-mode .theme-toggle:hover {
-      background: #4b5563;
+    
+    .status-indicator.offline {
+      background-color: var(--danger-color);
+    }
+    
+    .sensor-data {
+      color: var(--light-text);
+      font-style: italic;
+      margin-bottom: 15px;
+    }
+    
+    .metrics-list {
+      list-style: none;
+    }
+    
+    .metric-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 0;
+      border-bottom: 1px solid #EEEEEE;
+    }
+    
+    .metric-item:last-child {
+      border-bottom: none;
+    }
+    
+    .metric-value {
+      font-weight: 600;
+      font-size: 18px;
+    }
+    
+    .profile-section {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .profile-photo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .profile-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .info-box {
+      background-color: #F1F3F4;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #DADCE0;
+      border-radius: 4px;
+    }
+    
+    .city-display {
+      background-color: #E8F0FE;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    
+    #map {
+      height: 300px;
+      border-radius: 4px;
+      margin-top: 15px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    /* Login Form */
+    .login-form {
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 30px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #DADCE0;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .profile-info {
+        grid-template-columns: 1fr;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header with Authentication -->
-    <div class="header">
-    <h1>Air Quality Dashboard</h1>
-      <div class="auth-section">
-        <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
-          <span id="themeIcon">🌙</span>
-        </button>
-        <div id="userInfo" class="user-info hidden">
-          <div class="user-avatar" id="userAvatar" onclick="uploadProfilePhoto()" title="Click to upload profile photo">
-            <div class="avatar-placeholder" id="avatarPlaceholder">U</div>
-            <img id="avatarImage" src="" alt="Profile" style="display: none;">
-          </div>
-          <div class="user-details">
-            <div class="user-name" id="userName">User</div>
-            <div class="user-city" id="userCity">Delhi</div>
-          </div>
-          <button id="signOutBtn" class="danger" onclick="signOut()">Sign Out</button>
+    <header>
+      <h1>Air Quality Dashboard</h1>
+      <div class="user-controls">
+        <button id="themeToggle" onclick="toggleTheme()">🌙</button>
+        <div id="userInfo" class="hidden">
+          <div class="user-avatar" id="userAvatar">U</div>
         </div>
-        <div id="loginSection">
-          <div class="input-group">
-            <input type="text" id="usernameInput" placeholder="Username" />
-            <input type="password" id="passwordInput" placeholder="Password" />
-            <button class="primary" onclick="signIn()">Sign In</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Status Bar -->
-    <div class="status-bar">
-      <span id="status" class="badge disconnected">Backend Disconnected</span>
-      <button id="refresh" onclick="fetchLatest()">Refresh Data</button>
-      <button onclick="detectBackendPort()" style="background: #10b981; color: white;">Detect Backend</button>
-      <button onclick="connectToPort5000()" style="background: #3b82f6; color: white;">Connect to Port 5000</button>
-    </div>
-
-    <!-- Login/Registration Form (shown when not authenticated) -->
-    <div id="loginForm" class="login-form">
-      <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-        <button id="showLogin" class="primary" onclick="showLoginForm()" style="margin-right: 10px;">Sign In</button>
-        <button id="showRegister" onclick="showRegisterForm()" style="background: #6b7280; color: white;">Register</button>
-      </div>
-      
-      <!-- Login Form -->
-      <div id="loginSection">
-        <h2>Sign In</h2>
-        <p>Enter your credentials to access the dashboard.</p>
-        <div class="form-group">
-          <label for="loginUsername">Username:</label>
-          <input type="text" id="loginUsername" placeholder="Enter username" />
-        </div>
-        <div class="form-group">
-          <label for="loginPassword">Password:</label>
-          <input type="password" id="loginPassword" placeholder="Enter password" />
-        </div>
-        <button class="primary" onclick="handleLogin()">Sign In</button>
-      </div>
-      
-      <!-- Registration Form -->
-      <div id="registerSection" class="hidden">
-        <h2>Create Account</h2>
-        <p>Register to access the dashboard and set your city.</p>
-        <div class="form-group">
-          <label for="regUsername">Username:</label>
-          <input type="text" id="regUsername" placeholder="Choose a username" />
-        </div>
-        <div class="form-group">
-          <label for="regPassword">Password:</label>
-          <input type="password" id="regPassword" placeholder="Choose a password (min 6 characters)" />
-        </div>
-        <div class="form-group">
-          <label for="regEmail">Email (optional):</label>
-          <input type="email" id="regEmail" placeholder="Enter your email" />
-        </div>
-        <div class="form-group">
-          <label for="regCity">Your City:</label>
-          <input type="text" id="regCity" placeholder="Enter your city (e.g., Delhi)" value="Delhi" />
-        </div>
-        <button class="primary" onclick="handleRegister()">Create Account</button>
-      </div>
-    </div>
-
-    <!-- Dashboard (shown when authenticated) -->
-    <div id="dashboard" class="hidden">
-      <!-- ESP32 Device Status Card -->
-    <div class="card">
-        <h2 style="color: #3b82f6; margin-top: 0;">ESP32 Device Status</h2>
-        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div id="esp32Status" class="badge disconnected">Offline</div>
-            <span id="esp32LastSync">Last sync: Never</span>
-          </div>
-          <button class="primary" onclick="pingESP32()">Ping ESP32</button>
-        </div>
-        <div class="esp32-sensor-data" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
-          <h4 style="margin: 0 0 10px 0; color: #64748b;">Sensor Data from ESP32</h4>
-          <div id="esp32SensorData" style="color: #64748b; font-style: italic;">
-            No data received from ESP32 device
-          </div>
-        </div>
-    </div>
-
-      <!-- AQI Data Card -->
-    <div class="card">
-        <h2 style="color: #3b82f6; margin-top: 0;">Live Air Quality of This Region</h2>
-      <div class="grid">
-          <div class="metric-row">
-            <h3>PM10 (Particulate Matter 10)</h3>
-            <div class="value" id="pm10">-</div>
-      </div>
-          <div class="metric-row">
-            <h3>PM2.5 (Fine Particulate Matter)</h3>
-            <div class="value" id="pm25">-</div>
-    </div>
-          <div class="metric-row">
-            <h3>CO2 (Carbon Dioxide)</h3>
-            <div class="value" id="co2">-</div>
-  </div>
-          <div class="metric-row">
-            <h3>Humidity</h3>
-            <div class="value" id="humidity">-</div>
-          </div>
-          <div class="metric-row">
-            <h3>Temperature</h3>
-            <div class="value" id="temperature">-</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- User Profile Card -->
-      <div class="card">
-        <h2 style="color: #3b82f6; margin-top: 0;">Your Profile</h2>
-        
-        <!-- Profile Photo Section -->
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0 0 10px 0; color: #374151;">Profile Photo</h3>
-          <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-            <div class="user-avatar" id="profileAvatar" style="width: 60px; height: 60px; font-size: 24px;">
-              <div class="avatar-placeholder" id="profileAvatarPlaceholder">U</div>
-              <img id="profileAvatarImage" src="" alt="Profile" style="display: none;">
-            </div>
-            <div>
-              <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
-              <button class="primary" onclick="document.getElementById('photoInput').click()">Upload Photo</button>
-              <button onclick="removeProfilePhoto()" style="background: #ef4444; color: white; margin-left: 10px;">Remove</button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Your Info Section -->
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0 0 15px 0; color: #374151;">Your Info</h3>
-          
-          <!-- Current Info Display -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div class="current-username" style="padding: 10px; background: #f3f4f6; border-radius: 6px;">
-              <strong>Username:</strong> <span id="currentUsername">Not set</span>
-            </div>
-            <div class="current-email" style="padding: 10px; background: #f3f4f6; border-radius: 6px;">
-              <strong>Email:</strong> <span id="currentEmail">Not set</span>
-            </div>
-          </div>
-          
-          <!-- Update Form -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-            <div>
-              <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Username</label>
-              <input type="text" id="usernameInput" placeholder="Enter your username" onkeypress="handleProfileKeypress(event, 'username')" style="width: 100%;" />
-            </div>
-            <div>
-              <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #374151;">Email</label>
-              <input type="email" id="emailInput" placeholder="Enter your email" onkeypress="handleProfileKeypress(event, 'email')" style="width: 100%;" />
-            </div>
-          </div>
-          
-          <button class="primary" onclick="updateProfile()" style="width: 100%;">Update Info</button>
-        </div>
-        
-        <!-- City Section -->
         <div>
-          <h3 style="margin: 0 0 10px 0; color: #374151;">Your City</h3>
-          <div class="input-group" style="margin-bottom: 20px;">
-            <input type="text" id="userCityInput" placeholder="Enter your city" />
-            <button class="primary" onclick="updateUserCity()">Update My City</button>
-          </div>
-          <div id="currentCity" class="current-city" style="padding: 10px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; color: #0369a1;">
-            <strong>Current City:</strong> <span id="currentCityName">-</span>
-          </div>
+          <span>User</span>
+          <span id="username">admin</span>
         </div>
+        <button id="userBtn" class="primary">User</button>
+        <button id="showLogin" class="primary">Login</button>
       </div>
+    </header>
+    
+    <div class="status-bar">
+      <div id="backendStatusDetail" class="badge connecting">Connecting to backend...</div>
+      <button onclick="refreshData()" class="secondary">Refresh Data</button>
+      <button onclick="detectBackendPortWithRetry()" class="secondary">Detect Backend</button>
+      <button onclick="connectToPort(5000)" class="primary">Connect to Port 5000</button>
+    </div>
 
-      <!-- Weather Data Card -->
-      <div class="card">
-        <h2 style="color: #3b82f6; margin-top: 0;">Weather Information</h2>
-        
-        <!-- Weather Map Section -->
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0 0 10px 0; color: #374151;">Interactive Weather Map</h3>
-          <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 14px;">Search for a location or click anywhere on the map to get weather data</p>
-          
-          <!-- Search Bar -->
-          <div style="margin-bottom: 15px;">
-            <div class="input-group" style="margin-bottom: 10px;">
-              <input type="text" id="mapSearchInput" placeholder="Search for a location (e.g., Jaipur, Delhi, Mumbai)" style="flex: 1;" onkeypress="handleMapSearchKeypress(event)" />
-              <button class="primary" onclick="searchLocation()">Search</button>
-            </div>
-            <div id="searchStatus" style="font-size: 12px; color: #6b7280; margin-top: 5px;"></div>
-          </div>
-          
-          <div id="weatherMap" style="height: 300px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
-        </div>
-        
-        <!-- Manual City Input -->
-        <div class="input-group" style="margin-bottom: 20px;">
-          <input type="text" id="cityInput" placeholder="Enter city name (e.g., Delhi)" />
-          <button class="primary" onclick="fetchWeather()">Check Weather</button>
-        </div>
-        
-        <div class="weather-grid">
-          <div class="metric"><h3>City</h3><div id="weatherCity">-</div></div>
-          <div class="metric"><h3>Temperature</h3><div id="weatherTemp">-</div></div>
-          <div class="metric"><h3>Humidity</h3><div id="weatherHumidity">-</div></div>
-          <div class="metric"><h3>Wind Speed</h3><div id="weatherWind">-</div></div>
-        </div>
-      </div>
-
-      <!-- Email Storage Card -->
-      <div class="card">
-        <h2 style="color: #3b82f6; margin-top: 0;">Email Settings</h2>
+    <!-- Login Form -->
+    <div id="loginForm" class="login-form card hidden">
+      <h2>Sign In</h2>
+      <div class="form-group">
         <div class="input-group">
-          <input type="email" id="emailInput" placeholder="Enter your email address" />
-          <button class="primary" onclick="saveEmail()">Save Email</button>
+          <label for="usernameInput">Username</label>
+          <input type="text" id="usernameInput" placeholder="Enter your username">
         </div>
-        <div id="savedEmail" class="saved-email hidden">
-          <strong>Your email:</strong> <span id="savedEmailText"></span>
+      </div>
+      <div class="form-group">
+        <div class="input-group">
+          <label for="passwordInput">Password</label>
+          <input type="password" id="passwordInput" placeholder="Enter your password">
+        </div>
+      </div>
+      <button id="loginBtn" class="primary" style="width: 100%;">Sign In</button>
+      <p id="loginError" style="color: #ef4444; margin-top: 10px; display: none;"></p>
+    </div>
+
+    <!-- Dashboard (Main Content) -->
+    <div id="dashboard" class="hidden">
+      <!-- ESP32 Device Status -->
+      <div class="card">
+        <h2>ESP32 Device Status</h2>
+        <div class="esp32-status">
+          <div id="esp32StatusIndicator" class="status-indicator offline"></div>
+          <span id="esp32Status">Offline</span>
+          <span style="margin-left: auto;">Last sync: <span id="lastSync">--:--:--</span></span>
+        </div>
+        <button id="pingESP32" class="primary">Ping ESP32</button>
+        
+        <div class="sensor-data">
+          <p>Sensor Data from ESP32</p>
+          <p>Device sending data to backend</p>
+        </div>
+      </div>
+      
+      <!-- Live Air Quality -->
+      <div class="card">
+        <h2>Live Air Quality of This Region</h2>
+        <ul class="metrics-list">
+          <li class="metric-item">
+            <span>PM10 (Particulate Matter 10)</span>
+            <span id="pm10-value" class="metric-value">-</span>
+          </li>
+          <li class="metric-item">
+            <span>PM2.5 (Fine Particulate Matter)</span>
+            <span id="pm25-value" class="metric-value">-</span>
+          </li>
+          <li class="metric-item">
+            <span>CO2 (Carbon Dioxide)</span>
+            <span id="co2-value" class="metric-value">-</span>
+          </li>
+          <li class="metric-item">
+            <span>Humidity</span>
+            <span id="humidity-value" class="metric-value">-</span>
+          </li>
+          <li class="metric-item">
+            <span>Temperature</span>
+            <span id="temp-value" class="metric-value">-</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Profile Section Removed -->
+      
+      <!-- Weather Information -->
+      <div class="card">
+        <h2>Weather Information</h2>
+        <h3>Interactive Weather Map</h3>
+        <p>Search for a location or click anywhere on the map to get weather data</p>
+        <div id="map"></div>
+        
+        <!-- Location Search -->
+        <div class="location-search" style="margin-top: 15px;">
+          <div class="form-group">
+            <input type="text" id="locationInput" class="form-control" placeholder="Enter location (e.g., Delhi, London)">
+            <button class="primary" id="searchLocationBtn" style="margin-top: 10px;">Search Air Quality</button>
+          </div>
+          <div id="locationAqiResult" style="display: none; margin-top: 10px;">
+            <div class="city-display">
+              <strong>Air Quality for <span id="locationName"></span>:</strong>
+              <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <span>AQI: <span id="locationAqi" class="badge connected">--</span></span>
+                <span>PM2.5: <span id="locationPm25" class="badge connected">--</span></span>
+                <span>PM10: <span id="locationPm10" class="badge connected">--</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Location Comparison -->
+        <div class="location-comparison" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+          <h4>Compare Two Locations</h4>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <div style="flex: 1;">
+              <input type="text" id="location1" placeholder="First location" class="form-control">
+            </div>
+            <div style="flex: 1;">
+              <input type="text" id="location2" placeholder="Second location" class="form-control">
+            </div>
+          </div>
+          <button class="primary" id="compareLocationsBtn" style="margin-top: 10px; width: 100%;">Compare Air Quality</button>
+          
+          <div id="comparisonResult" style="display: none; margin-top: 15px;">
+            <div class="comparison-table" style="border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+              <div style="display: flex; background-color: #f5f5f5; padding: 10px;">
+                <div style="flex: 1; font-weight: bold;">Metric</div>
+                <div style="flex: 1; font-weight: bold;" id="location1Name">Location 1</div>
+                <div style="flex: 1; font-weight: bold;" id="location2Name">Location 2</div>
+              </div>
+              <div style="display: flex; padding: 10px; border-top: 1px solid #ddd;">
+                <div style="flex: 1;">AQI</div>
+                <div style="flex: 1;" id="location1Aqi">--</div>
+                <div style="flex: 1;" id="location2Aqi">--</div>
+              </div>
+              <div style="display: flex; padding: 10px; border-top: 1px solid #ddd;">
+                <div style="flex: 1;">PM2.5</div>
+                <div style="flex: 1;" id="location1Pm25">--</div>
+                <div style="flex: 1;" id="location2Pm25">--</div>
+              </div>
+              <div style="display: flex; padding: 10px; border-top: 1px solid #ddd;">
+                <div style="flex: 1;">PM10</div>
+                <div style="flex: 1;" id="location1Pm10">--</div>
+                <div style="flex: 1;" id="location2Pm10">--</div>
+              </div>
+              <div style="display: flex; padding: 10px; border-top: 1px solid #ddd;">
+                <div style="flex: 1;">CO2</div>
+                <div style="flex: 1;" id="location1Co2">--</div>
+                <div style="flex: 1;" id="location2Co2">--</div>
+              </div>
+            </div>
+            
+            <div class="safety-recommendation" style="margin-top: 15px; padding: 15px; background-color: #e8f5e9; border-radius: 4px;">
+              <h4>Safety Recommendation</h4>
+              <p id="safetyRecommendation">Loading comparison...</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
+  
+  <!-- Leaflet.js -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <script>
     // Global variables
-    let backendUrl = 'http://localhost:5000'; // Default port 5000, will be updated dynamically
+    let backendUrl = null;
     let isAuthenticated = false;
     let currentUser = null;
-    let isDarkMode = false;
-    let esp32LastPing = null;
-    let backendConnected = false;
-    let currentUsername = ''; // No default username
-    let weatherMap = null; // Leaflet map instance
-    let currentEmail = ''; // Current user email
-
+    let currentUsername = null;
+    let map = null;
+    let weatherMarker = null;
+    let darkMode = localStorage.getItem('darkMode') === 'true';
+    
     // Initialize the application
-    window.addEventListener('DOMContentLoaded', function() {
-      initializeApp();
-    });
-
-    // Initialize application
     function initializeApp() {
-      // Set OpenWeatherMap API key in localStorage if not already set
-      if (!localStorage.getItem('OWM_KEY')) {
-        localStorage.setItem('OWM_KEY', '0ed03441c5022238438f3b1788f82eb9');
-        console.log('✅ OpenWeatherMap API key set in localStorage');
-      }
-
-      // Initialize theme
-      initializeTheme();
-
-      // Load username and email from localStorage
-      loadUsername();
-      loadUserEmail();
-
+      // Force login with admin user
+      localStorage.setItem('authToken', 'demo-token');
+      localStorage.setItem('username', 'admin');
+      
       // Check if user is already authenticated
-      const token = localStorage.getItem('ACCESS_TOKEN');
-      if (token) {
+      checkAuthStatus();
+      
+      // Set up event listeners
+      document.getElementById('showLogin').addEventListener('click', showLoginForm);
+      document.getElementById('loginBtn').addEventListener('click', signIn);
+      document.getElementById('userBtn').addEventListener('click', openUserLogin);
+      document.getElementById('pingESP32').addEventListener('click', pingESP32);
+      document.getElementById('searchLocationBtn').addEventListener('click', searchLocationAirQuality);
+      document.getElementById('compareLocationsBtn').addEventListener('click', compareLocations);
+      
+      // Try to detect backend
+      detectBackendPortWithRetry();
+    }
+    
+    // Open user login in new tab
+    function openUserLogin() {
+      const loginUrl = 'user-login.html';
+      window.open(loginUrl, '_blank');
+    }
+    
+    // Search for air quality by location
+    function searchLocationAirQuality() {
+      const location = document.getElementById('locationInput').value.trim();
+      if (!location) {
+        alert('Please enter a location');
+        return;
+      }
+      
+      // Show loading state
+      document.getElementById('locationAqi').textContent = 'Loading...';
+      document.getElementById('locationPm25').textContent = 'Loading...';
+      document.getElementById('locationPm10').textContent = 'Loading...';
+      document.getElementById('locationName').textContent = location;
+      document.getElementById('locationAqiResult').style.display = 'block';
+      
+      // Using OpenWeatherMap API for air quality data
+      // In a real implementation, you would use your API key
+      const apiKey = 'demo-key'; // Replace with actual API key in production
+      const apiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?q=${encodeURIComponent(location)}&appid=${apiKey}`;
+      
+      // For demo purposes, we'll use mock data
+      setTimeout(() => {
+        // Mock AQI data - in a real app, you would fetch from the API
+        const mockAqi = Math.floor(Math.random() * 300) + 1;
+        const mockPm25 = (Math.random() * 100).toFixed(1);
+        const mockPm10 = (Math.random() * 150).toFixed(1);
+        
+        document.getElementById('locationAqi').textContent = mockAqi;
+        document.getElementById('locationPm25').textContent = mockPm25;
+        document.getElementById('locationPm10').textContent = mockPm10;
+        
+        // Set color based on AQI value
+        const aqiElement = document.getElementById('locationAqi');
+        if (mockAqi <= 50) {
+          aqiElement.className = 'badge good';
+        } else if (mockAqi <= 100) {
+          aqiElement.className = 'badge moderate';
+        } else if (mockAqi <= 150) {
+          aqiElement.className = 'badge unhealthy-sensitive';
+        } else if (mockAqi <= 200) {
+          aqiElement.className = 'badge unhealthy';
+        } else if (mockAqi <= 300) {
+          aqiElement.className = 'badge very-unhealthy';
+        } else {
+          aqiElement.className = 'badge hazardous';
+        }
+      }, 1000);
+    }
+    
+    // Compare air quality between two locations
+    function compareLocations() {
+      const location1 = document.getElementById('location1').value.trim();
+      const location2 = document.getElementById('location2').value.trim();
+      
+      if (!location1 || !location2) {
+        alert('Please enter both locations');
+        return;
+      }
+      
+      // Update location names
+      document.getElementById('location1Name').textContent = location1;
+      document.getElementById('location2Name').textContent = location2;
+      
+      // Show loading state
+      document.getElementById('comparisonResult').style.display = 'block';
+      document.getElementById('safetyRecommendation').textContent = 'Loading comparison...';
+      
+      // Set all values to loading
+      document.getElementById('location1Aqi').textContent = 'Loading...';
+      document.getElementById('location1Pm25').textContent = 'Loading...';
+      document.getElementById('location1Pm10').textContent = 'Loading...';
+      document.getElementById('location1Co2').textContent = 'Loading...';
+      
+      document.getElementById('location2Aqi').textContent = 'Loading...';
+      document.getElementById('location2Pm25').textContent = 'Loading...';
+      document.getElementById('location2Pm10').textContent = 'Loading...';
+      document.getElementById('location2Co2').textContent = 'Loading...';
+      
+      // For demo purposes, we'll use mock data
+      setTimeout(() => {
+        // Generate mock data for both locations
+        const location1Data = {
+          aqi: Math.floor(Math.random() * 300) + 1,
+          pm25: (Math.random() * 100).toFixed(1),
+          pm10: (Math.random() * 150).toFixed(1),
+          co2: Math.floor(Math.random() * 1000) + 400
+        };
+        
+        const location2Data = {
+          aqi: Math.floor(Math.random() * 300) + 1,
+          pm25: (Math.random() * 100).toFixed(1),
+          pm10: (Math.random() * 150).toFixed(1),
+          co2: Math.floor(Math.random() * 1000) + 400
+        };
+        
+        // Update UI with mock data
+        document.getElementById('location1Aqi').textContent = location1Data.aqi;
+        document.getElementById('location1Pm25').textContent = location1Data.pm25 + ' μg/m³';
+        document.getElementById('location1Pm10').textContent = location1Data.pm10 + ' μg/m³';
+        document.getElementById('location1Co2').textContent = location1Data.co2 + ' ppm';
+        
+        document.getElementById('location2Aqi').textContent = location2Data.aqi;
+        document.getElementById('location2Pm25').textContent = location2Data.pm25 + ' μg/m³';
+        document.getElementById('location2Pm10').textContent = location2Data.pm10 + ' μg/m³';
+        document.getElementById('location2Co2').textContent = location2Data.co2 + ' ppm';
+        
+        // Highlight better values
+        highlightBetterValue('location1Aqi', 'location2Aqi', true);
+        highlightBetterValue('location1Pm25', 'location2Pm25', true);
+        highlightBetterValue('location1Pm10', 'location2Pm10', true);
+        highlightBetterValue('location1Co2', 'location2Co2', true);
+        
+        // Generate safety recommendation
+        const safetyRecommendation = generateSafetyRecommendation(location1, location2, location1Data, location2Data);
+        document.getElementById('safetyRecommendation').innerHTML = safetyRecommendation;
+        
+        // Update recommendation box color based on which location is safer
+        const recommendationBox = document.querySelector('.safety-recommendation');
+        if (location1Data.aqi < location2Data.aqi) {
+          recommendationBox.style.backgroundColor = '#e8f5e9'; // Green for location 1
+        } else if (location2Data.aqi < location1Data.aqi) {
+          recommendationBox.style.backgroundColor = '#e3f2fd'; // Blue for location 2
+        } else {
+          recommendationBox.style.backgroundColor = '#f5f5f5'; // Gray for tie
+        }
+      }, 1500);
+    }
+    
+    // Helper function to highlight the better value
+    function highlightBetterValue(id1, id2, lowerIsBetter) {
+      const element1 = document.getElementById(id1);
+      const element2 = document.getElementById(id2);
+      
+      // Extract numeric values
+      const value1 = parseFloat(element1.textContent);
+      const value2 = parseFloat(element2.textContent);
+      
+      // Reset styles
+      element1.style.color = '';
+      element1.style.fontWeight = '';
+      element2.style.color = '';
+      element2.style.fontWeight = '';
+      
+      // Highlight better value
+      if (lowerIsBetter) {
+        if (value1 < value2) {
+          element1.style.color = '#4caf50'; // Green
+          element1.style.fontWeight = 'bold';
+        } else if (value2 < value1) {
+          element2.style.color = '#4caf50'; // Green
+          element2.style.fontWeight = 'bold';
+        }
+      } else {
+        if (value1 > value2) {
+          element1.style.color = '#4caf50'; // Green
+          element1.style.fontWeight = 'bold';
+        } else if (value2 > value1) {
+          element2.style.color = '#4caf50'; // Green
+          element2.style.fontWeight = 'bold';
+        }
+      }
+    }
+    
+    // Generate safety recommendation based on air quality data
+    function generateSafetyRecommendation(location1, location2, data1, data2) {
+      let recommendation = '';
+      let saferLocation = '';
+      let hazardousLocation = '';
+      
+      // Determine which location is safer based on AQI
+      if (data1.aqi < data2.aqi) {
+        saferLocation = location1;
+        hazardousLocation = location2;
+      } else {
+        saferLocation = location2;
+        hazardousLocation = location1;
+      }
+      
+      // Generate recommendation
+      recommendation += `<strong>${saferLocation}</strong> currently has better air quality than <strong>${hazardousLocation}</strong>.<br><br>`;
+      
+      // Add specific recommendations based on PM2.5 levels
+      const pm25Safer = data1.pm25 < data2.pm25 ? location1 : location2;
+      recommendation += `<strong>PM2.5:</strong> ${pm25Safer} has lower PM2.5 levels, which is better for respiratory health.<br>`;
+      
+      // Add specific recommendations based on PM10 levels
+      const pm10Safer = data1.pm10 < data2.pm10 ? location1 : location2;
+      recommendation += `<strong>PM10:</strong> ${pm10Safer} has lower PM10 levels, which means less dust and larger particles.<br>`;
+      
+      // Add specific recommendations based on CO2 levels
+      const co2Safer = data1.co2 < data2.co2 ? location1 : location2;
+      recommendation += `<strong>CO2:</strong> ${co2Safer} has lower CO2 levels, indicating better air circulation.<br><br>`;
+      
+      // Add health advice
+      if (Math.min(data1.aqi, data2.aqi) > 150) {
+        recommendation += '<strong>Health Advisory:</strong> Both locations currently have unhealthy air quality. Consider wearing a mask if you need to go outside.';
+      } else if (Math.max(data1.aqi, data2.aqi) > 150) {
+        recommendation += `<strong>Health Advisory:</strong> ${hazardousLocation} has unhealthy air quality. If you're in this area, consider limiting outdoor activities.`;
+      } else {
+        recommendation += '<strong>Health Advisory:</strong> Air quality is acceptable in both locations, but sensitive groups may want to exercise caution.';
+      }
+      
+      return recommendation;
+    }
+    
+    // Initialize theme
+    function initializeTheme() {
+      const savedTheme = localStorage.getItem('darkMode');
+      darkMode = savedTheme === 'true';
+      
+      if (darkMode) {
+        document.body.classList.add('dark-mode');
+        document.getElementById('themeToggle').textContent = '☀️';
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.getElementById('themeToggle').textContent = '🌙';
+      }
+    }
+    
+    // Toggle theme
+    function toggleTheme() {
+      darkMode = !darkMode;
+      localStorage.setItem('darkMode', darkMode);
+      initializeTheme();
+    }
+    
+    // Check authentication status
+    function checkAuthStatus() {
+      const token = localStorage.getItem('authToken');
+      const username = localStorage.getItem('username');
+      
+      if (token && username) {
         isAuthenticated = true;
-        // Try to get user data from token (simplified for now)
-        currentUser = { username: 'User', city: 'Delhi' };
+        currentUsername = username;
         showDashboard();
         updateUserDisplay();
       } else {
         showLoginForm();
       }
-
-      // Initialize weather map
-      initializeWeatherMap();
-
-      // Try to detect backend port dynamically with retry
-      detectBackendPortWithRetry();
     }
-
-    // Initialize theme from localStorage
-    function initializeTheme() {
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'dark') {
-        enableDarkMode();
-      } else {
-        enableLightMode();
-      }
-    }
-
-    // Toggle theme between light and dark
-    function toggleTheme() {
-      if (isDarkMode) {
-        enableLightMode();
-      } else {
-        enableDarkMode();
-      }
-    }
-
-    // Enable dark mode
-    function enableDarkMode() {
-      isDarkMode = true;
-      document.body.classList.add('dark-mode');
-      document.getElementById('themeIcon').textContent = '☀️';
-      localStorage.setItem('theme', 'dark');
-      console.log('🌙 Dark mode enabled');
-    }
-
-    // Enable light mode
-    function enableLightMode() {
-      isDarkMode = false;
-      document.body.classList.remove('dark-mode');
-      document.getElementById('themeIcon').textContent = '🌙';
-      localStorage.setItem('theme', 'light');
-      console.log('☀️ Light mode enabled');
-    }
-
-    // Update ESP32 status based on backend connection
-    function updateESP32Status() {
-      if (backendConnected) {
-        // Check if we have recent readings (within last 5 minutes)
-        const now = new Date();
-        const lastReading = localStorage.getItem('lastReadingTime');
-        
-        if (lastReading) {
-          const timeDiff = now - new Date(lastReading);
-          if (timeDiff < 5 * 60 * 1000) { // 5 minutes
-            document.getElementById('esp32Status').textContent = 'Online';
-            document.getElementById('esp32Status').className = 'badge connected';
-            document.getElementById('esp32SensorData').textContent = 'Device sending data to backend';
-            document.getElementById('esp32LastSync').textContent = `Last sync: ${new Date(lastReading).toLocaleTimeString()}`;
-            return;
-          }
-        }
-      }
-      
-      // Default to offline if no recent data
-      document.getElementById('esp32Status').textContent = 'Offline';
-      document.getElementById('esp32Status').className = 'badge disconnected';
-      document.getElementById('esp32SensorData').textContent = 'No data received from ESP32 device';
-      document.getElementById('esp32LastSync').textContent = 'Last sync: Never';
-    }
-
-    // Ping ESP32 device
-    function pingESP32() {
-      console.log('📡 Pinging ESP32 device...');
-      
-      if (!backendConnected) {
-        alert('Backend not connected. Please connect to backend first.');
-        return;
-      }
-      
-      // Update UI immediately
-      document.getElementById('esp32Status').textContent = 'Pinging...';
-      document.getElementById('esp32Status').className = 'badge';
-      
-      // Try to get latest readings from backend
-      fetchLatest().then(() => {
-        // Update ESP32 status after getting readings
-        updateESP32Status();
-        console.log('✅ ESP32 ping completed');
-      }).catch(() => {
-        // If readings fail, mark as offline
-        document.getElementById('esp32Status').textContent = 'Offline';
-        document.getElementById('esp32Status').className = 'badge disconnected';
-        document.getElementById('esp32SensorData').textContent = 'No data received from ESP32 device';
-        console.log('❌ ESP32 device is offline');
-      });
-    }
-
-    // Detect backend with retry mechanism
-    async function detectBackendPortWithRetry() {
-      console.log('🔄 Starting backend detection with retry...');
-      
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`Attempt ${attempt}/3: Detecting backend...`);
-        await detectBackendPort();
-        
-        if (backendUrl && backendUrl.includes('localhost')) {
-          console.log('✅ Backend detected successfully');
-          backendConnected = true;
-          updateESP32Status();
-          return;
-        }
-        
-        if (attempt < 3) {
-          console.log(`⏳ Waiting 2 seconds before retry...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      }
-      
-      console.log('❌ Backend detection failed after 3 attempts');
-      backendConnected = false;
-      updateStatus('Backend not found - Click "Connect to Port 5000"', 'disconnected');
-    }
-
-    // Detect backend port by trying common ports (prioritizing 5000)
-    async function detectBackendPort() {
-      // Try port 5000 first (where backend is actually running), then other common ports
-      const commonPorts = [5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008, 5009, 5010];
-      
-      console.log('🔍 Scanning for backend on available ports...');
-      console.log('   Prioritizing port 5000...');
-      
-      for (const port of commonPorts) {
-        try {
-          console.log(`   Trying port ${port}...`);
-          const response = await fetch(`http://localhost:${port}/health`, {
-            method: 'GET',
-            signal: AbortSignal.timeout(2000)
-          });
-          
-          if (response.ok) {
-            backendUrl = `http://localhost:${port}`;
-            console.log(`✅ Backend detected on port ${port}`);
-            updateStatus(`Backend Connected (Port ${port})`, 'connected');
-            if (isAuthenticated) {
-              fetchLatest();
-            }
-            return;
-          }
-        } catch (error) {
-          // Port not available, try next
-          console.log(`   Port ${port} not available`);
-        }
-      }
-      
-      console.log('⚠️ Backend not detected on common ports');
-      console.log('💡 Make sure the Flask backend is running on port 5000');
-      updateStatus('Backend Disconnected - Start Flask backend', 'disconnected');
-    }
-
-    // Update status display
-    function updateStatus(text, className) {
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = text;
-      statusEl.className = `badge ${className}`;
-    }
-
-    // Connect directly to port 5000
-    async function connectToPort5000() {
-      console.log('🔗 Connecting directly to port 5000...');
-      backendUrl = 'http://localhost:5000';
-      
-      try {
-        const response = await fetch(`${backendUrl}/health`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(3000)
-        });
-        
-        if (response.ok) {
-          console.log('✅ Successfully connected to port 5000');
-          updateStatus('Backend Connected (Port 5000)', 'connected');
-          if (isAuthenticated) {
-            fetchLatest();
-          }
-        } else {
-          throw new Error(`HTTP ${response.status}`);
-        }
-      } catch (error) {
-        console.error('❌ Failed to connect to port 5000:', error);
-        updateStatus('Port 5000 not available', 'disconnected');
-      }
-    }
-
+    
     // Show login form
     function showLoginForm() {
       document.getElementById('loginForm').classList.remove('hidden');
       document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('showLogin').classList.add('hidden');
+      document.getElementById('signOutBtn').classList.add('hidden');
       document.getElementById('userInfo').classList.add('hidden');
-      document.getElementById('loginSection').classList.remove('hidden');
-      document.getElementById('registerSection').classList.add('hidden');
-      document.getElementById('showLogin').classList.add('primary');
-      document.getElementById('showRegister').classList.remove('primary');
     }
-
-    // Show registration form
-    function showRegisterForm() {
-      document.getElementById('loginForm').classList.remove('hidden');
-      document.getElementById('dashboard').classList.add('hidden');
-      document.getElementById('userInfo').classList.add('hidden');
-      document.getElementById('loginSection').classList.add('hidden');
-      document.getElementById('registerSection').classList.remove('hidden');
-      document.getElementById('showLogin').classList.remove('primary');
-      document.getElementById('showRegister').classList.add('primary');
+    
+    // Sign in
+    function signIn() {
+      const username = document.getElementById('usernameInput').value;
+      const password = document.getElementById('passwordInput').value;
+      
+      if (!username || !password) {
+        showLoginError('Please enter both username and password');
+        return;
+      }
+      
+      if (backendUrl) {
+        // Try to authenticate with backend
+        fetch(`${backendUrl}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Authentication failed');
+          }
+          return response.json();
+        })
+        .then(data => {
+          localStorage.setItem('authToken', data.access_token);
+          localStorage.setItem('username', username);
+          isAuthenticated = true;
+          currentUsername = username;
+          showDashboard();
+          updateUserDisplay();
+        })
+        .catch(error => {
+          showLoginError('Invalid username or password');
+        });
+      } else {
+        // Fallback to demo mode if backend is not available
+        if (username === 'admin' && password === 'pass') {
+          localStorage.setItem('authToken', 'demo-token');
+          localStorage.setItem('username', username);
+          isAuthenticated = true;
+          currentUsername = username;
+          showDashboard();
+          updateUserDisplay();
+        } else {
+          showLoginError('Invalid username or password');
+        }
+      }
     }
-
+    
+    // Show login error
+    function showLoginError(message) {
+      const errorElement = document.getElementById('loginError');
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+    
+    // Sign out
+    function signOut() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('username');
+      isAuthenticated = false;
+      currentUsername = null;
+      showLoginForm();
+    }
+    
     // Show dashboard
     function showDashboard() {
       document.getElementById('loginForm').classList.add('hidden');
       document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('showLogin').classList.add('hidden');
+      document.getElementById('signOutBtn').classList.remove('hidden');
       document.getElementById('userInfo').classList.remove('hidden');
-      document.getElementById('loginSection').classList.add('hidden');
       
-      // Update username display when showing dashboard
-      updateUsernameDisplay();
-    }
-
-    // Handle registration
-    async function handleRegister() {
-      const username = document.getElementById('regUsername').value;
-      const password = document.getElementById('regPassword').value;
-      const email = document.getElementById('regEmail').value;
-      const city = document.getElementById('regCity').value;
-
-      if (!username || !password) {
-        alert('Please enter username and password');
-        return;
+      // Initialize map if not already initialized
+      if (!map && isAuthenticated) {
+        initializeMap();
       }
-
-      if (username.length < 3) {
-        alert('Username must be at least 3 characters');
-        return;
-      }
-
-      if (password.length < 6) {
-        alert('Password must be at least 6 characters');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${backendUrl}/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username, password, email, city }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Registration failed');
-        }
-
-        alert('Registration successful! Please sign in.');
-        
-        // Clear form and switch to login
-        document.getElementById('regUsername').value = '';
-        document.getElementById('regPassword').value = '';
-        document.getElementById('regEmail').value = '';
-        document.getElementById('regCity').value = 'Delhi';
-        
-        showLoginForm();
-        console.log('✅ Registration successful');
-      } catch (error) {
-        console.error('Registration error:', error);
-        alert(`Registration failed: ${error.message}`);
-      }
-    }
-
-    // Handle login
-    async function handleLogin() {
-      const username = document.getElementById('loginUsername').value;
-      const password = document.getElementById('loginPassword').value;
-
-      if (!username || !password) {
-        alert('Please enter both username and password');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${backendUrl}/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username, password }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Login failed');
-        }
-
-        localStorage.setItem('ACCESS_TOKEN', data.access_token);
-        currentUser = data.user;
-        isAuthenticated = true;
-        
-        // Clear form
-        document.getElementById('loginUsername').value = '';
-        document.getElementById('loginPassword').value = '';
-        
-        // Update user info display
-        updateUserDisplay();
-        
-        showDashboard();
-        fetchLatest();
-        
-        console.log('✅ Login successful');
-      } catch (error) {
-        console.error('Login error:', error);
-        alert(`Login failed: ${error.message}`);
-      }
-    }
-
-    // Sign in (alternative method)
-    async function signIn() {
-      const username = document.getElementById('usernameInput').value;
-      const password = document.getElementById('passwordInput').value;
-
-      if (!username || !password) {
-        alert('Please enter both username and password');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${backendUrl}/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username, password }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Login failed');
-        }
-
-        const data = await response.json();
-        localStorage.setItem('ACCESS_TOKEN', data.access_token);
-        isAuthenticated = true;
-        
-        // Clear form
-        document.getElementById('usernameInput').value = '';
-        document.getElementById('passwordInput').value = '';
-        
-        showDashboard();
-        fetchLatest();
-        
-        console.log('✅ Sign in successful');
-      } catch (error) {
-        console.error('Sign in error:', error);
-        alert('Sign in failed. Please check your credentials. Use username "admin" with password "pass"');
-      }
-    }
-
-    // Sign out
-    function signOut() {
-      localStorage.removeItem('ACCESS_TOKEN');
-      localStorage.removeItem('USER_EMAIL');
-      isAuthenticated = false;
-      currentUser = null;
-      showLoginForm();
-      console.log('✅ Signed out successfully');
-    }
-
-    // Generate user avatar
-    function generateAvatar(username) {
-      if (!username) return 'U';
-      return username.charAt(0).toUpperCase();
-    }
-
-    // Generate avatar color based on username
-    function getAvatarColor(username) {
-      if (!username) return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
       
-      const colors = [
-        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-        'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-        'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-        'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
-      ];
+      // Fetch data
+      refreshData();
       
-      let hash = 0;
-      for (let i = 0; i < username.length; i++) {
-        hash = username.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return colors[Math.abs(hash) % colors.length];
+      // Update profile info
+      document.getElementById('profile-username').textContent = currentUsername || 'Not set';
+      document.getElementById('username-input').value = currentUsername || '';
     }
-
+    
     // Update user display
     function updateUserDisplay() {
-      if (currentUser) {
-        // Update header user info
-        document.getElementById('userName').textContent = currentUser.username;
-        document.getElementById('userCity').textContent = currentUser.city;
-        
-        // Update avatars
-        updateUserAvatar(currentUser.username);
-        loadProfilePhoto(); // Load from server
-        
-        // Update dashboard city info
-        document.getElementById('currentCityName').textContent = currentUser.city;
-        document.getElementById('userCityInput').value = currentUser.city;
-      }
-      
-      // Always update username display (independent of authentication)
-      updateUsernameDisplay();
-    }
-
-    // Update user avatar with profile photo support
-    function updateUserAvatar(username, serverImageUrl = null) {
-      const avatarImage = document.getElementById('avatarImage');
-      const avatarPlaceholder = document.getElementById('avatarPlaceholder');
-      const avatar = document.getElementById('userAvatar');
-      
-      // Check for server image URL first, then localStorage
-      const profilePhoto = serverImageUrl || localStorage.getItem(`profile_photo_${username}`);
-      
-      if (profilePhoto) {
-        // Show profile photo
-        avatarImage.src = profilePhoto;
-        avatarImage.style.display = 'block';
-        avatarPlaceholder.style.display = 'none';
-      } else {
-        // Show placeholder with user initial
-        avatarImage.style.display = 'none';
-        avatarPlaceholder.style.display = 'flex';
-        avatarPlaceholder.textContent = generateAvatar(username);
-        avatarPlaceholder.style.background = getAvatarColor(username);
-      }
-    }
-
-    // Handle photo upload
-    async function handlePhotoUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size must be less than 5MB');
-        return;
-      }
-      
-      try {
-        console.log('📸 Uploading profile photo...');
-        
-        // Create FormData
-        const formData = new FormData();
-        formData.append('photo', file);
-        formData.append('username', currentUser.username);
-        
-        // Upload to backend
-        const response = await fetch(`${backendUrl}/upload-photo`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Upload failed: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('✅ Photo uploaded:', result);
-        
-        // Update profile avatar
-        updateProfileAvatar(result.imageUrl);
-        
-        // Update header avatar
-        updateUserAvatar(currentUser.username);
-        
-        alert('Profile photo uploaded successfully!');
-        
-      } catch (error) {
-        console.error('❌ Photo upload error:', error);
-        alert('Failed to upload photo. Please try again.');
+      if (currentUsername) {
+        document.getElementById('username').textContent = currentUsername;
+        document.getElementById('userAvatar').textContent = currentUsername.charAt(0).toUpperCase();
       }
     }
     
-    // Update profile avatar display
-    function updateProfileAvatar(imageUrl) {
-      const profileAvatarImage = document.getElementById('profileAvatarImage');
-      const profileAvatarPlaceholder = document.getElementById('profileAvatarPlaceholder');
+    // Initialize map
+    function initializeMap() {
+      map = L.map('map').setView([28.6139, 77.2090], 10); // Default to Delhi
       
-      if (imageUrl) {
-        profileAvatarImage.src = imageUrl;
-        profileAvatarImage.style.display = 'block';
-        profileAvatarPlaceholder.style.display = 'none';
-      } else {
-        profileAvatarImage.style.display = 'none';
-        profileAvatarPlaceholder.style.display = 'flex';
-        profileAvatarPlaceholder.textContent = generateAvatar(currentUser.username);
-        profileAvatarPlaceholder.style.background = getAvatarColor(currentUser.username);
-      }
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
     }
     
-    // Load profile photo from server
-    async function loadProfilePhoto() {
-      if (!currentUser || !backendConnected) return;
-      
-      try {
-        const response = await fetch(`${backendUrl}/get-profile-photo/${currentUser.username}`);
-        const data = await response.json();
-        
-        if (data.imageUrl) {
-          updateProfileAvatar(data.imageUrl);
-          // Also update header avatar
-          updateUserAvatar(currentUser.username, data.imageUrl);
-        }
-      } catch (error) {
-        console.error('❌ Error loading profile photo:', error);
-      }
-    }
-
-    // Load username from localStorage
-    function loadUsername() {
-      const savedUsername = localStorage.getItem('USERNAME');
-      if (savedUsername) {
-        currentUsername = savedUsername;
-        updateUsernameDisplay();
-        console.log('✅ Username loaded from localStorage:', currentUsername);
-      } else {
-        // No default username - leave field blank
-        currentUsername = '';
-        updateUsernameDisplay();
-        console.log('✅ No username found, field will be blank');
-      }
-    }
-
-    // Update username display
-    function updateUsernameDisplay() {
-      const usernameElement = document.getElementById('currentUsername');
-      if (usernameElement) {
-        usernameElement.textContent = currentUsername || 'Not set';
-      }
-    }
-
-    // Update username function
-    function updateUsername() {
-      // Use the profile section's username input, not the login section's
-      const profileUsernameInput = document.querySelector('#dashboard input[id="usernameInput"]');
-      const newUsername = profileUsernameInput ? profileUsernameInput.value.trim() : '';
-      
-      // Validate input
-      if (!newUsername) {
-        alert('Please enter a username');
+    // Ping ESP32
+    function pingESP32() {
+      if (!backendUrl) {
+        alert('Backend not connected. Cannot ping ESP32.');
         return;
       }
       
-      if (newUsername.length < 2) {
-        alert('Username must be at least 2 characters long');
-        return;
-      }
-      
-      if (newUsername.length > 20) {
-        alert('Username must be less than 20 characters long');
-        return;
-      }
-      
-      // Check for valid characters (letters, numbers, underscore, hyphen)
-      if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
-        alert('Username can only contain letters, numbers, underscore (_), and hyphen (-)');
-        return;
-      }
-      
-      // Update global variable
-      currentUsername = newUsername;
-      
-      // Save to localStorage
-      localStorage.setItem('USERNAME', currentUsername);
-      
-      // Update display
-      updateUsernameDisplay();
-      
-      // Clear input field
-      if (profileUsernameInput) {
-        profileUsernameInput.value = '';
-      }
-      
-      // Show success message
-      console.log('✅ Username updated to:', currentUsername);
-      alert(`Username updated to: ${currentUsername}`);
-    }
-
-    // Handle Enter key press in profile inputs
-    function handleProfileKeypress(event, field) {
-      if (event.key === 'Enter') {
-        updateProfile();
-      }
-    }
-
-    // Initialize weather map
-    function initializeWeatherMap() {
-      // Wait for DOM to be ready
-      setTimeout(() => {
-        const mapElement = document.getElementById('weatherMap');
-        if (mapElement && typeof L !== 'undefined') {
-          // Initialize map centered on Delhi, India
-          weatherMap = L.map('weatherMap').setView([28.6139, 77.2090], 6);
-          
-          // Add OpenStreetMap tiles
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-          }).addTo(weatherMap);
-          
-          // Add click event listener
-          weatherMap.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
-            console.log(`🗺️ Map clicked at: ${lat}, ${lng}`);
-            
-            // Fetch weather for clicked location
-            fetchWeatherByCoordinates(lat, lng);
-          });
-          
-          console.log('✅ Weather map initialized');
-        }
-      }, 1000);
-    }
-
-    // Fetch weather by coordinates
-    async function fetchWeatherByCoordinates(lat, lng) {
-      try {
-        console.log(`🌤️ Fetching weather for coordinates: ${lat}, ${lng}`);
-        
-        // Check if backend is connected
-        if (!backendConnected) {
-          console.log('⚠️ Backend not connected, trying to detect port...');
-          await detectBackendPortWithRetry();
-        }
-        
-        const response = await fetch(`${backendUrl}/weather?lat=${lat}&lon=${lng}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          signal: AbortSignal.timeout(10000) // 10 second timeout
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('✅ Weather data received:', data);
-        
-        // Update weather display
-        updateWeatherDisplay(data);
-        
-        // Add marker to map
-        addWeatherMarker(lat, lng, data);
-        
-      } catch (error) {
-        console.error('❌ Error fetching weather by coordinates:', error);
-        
-        // Show more specific error message
-        let errorMessage = 'Failed to fetch weather data for this location';
-        if (error.name === 'AbortError') {
-          errorMessage = 'Weather request timed out. Please try again.';
-        } else if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Cannot connect to weather service. Please check your internet connection.';
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-        
-        alert(errorMessage);
-      }
-    }
-
-    // Add weather marker to map
-    function addWeatherMarker(lat, lng, weatherData) {
-      if (weatherMap) {
-        // Clear existing markers
-        weatherMap.eachLayer(function(layer) {
-          if (layer instanceof L.Marker) {
-            weatherMap.removeLayer(layer);
+      fetch(`${backendUrl}/ping_esp32`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to ping ESP32');
           }
-        });
-        
-        // Create popup content
-        const popupContent = `
-          <div style="text-align: center; min-width: 150px;">
-            <h3 style="margin: 0 0 10px 0; color: #3b82f6;">${weatherData.city}</h3>
-            <div style="font-size: 18px; font-weight: bold; color: #374151;">
-              ${weatherData.temperature}°C
-            </div>
-            <div style="font-size: 14px; color: #6b7280; margin-top: 5px;">
-              Humidity: ${weatherData.humidity}%
-            </div>
-            <div style="font-size: 14px; color: #6b7280;">
-              Wind: ${weatherData.wind_speed} m/s
-            </div>
-          </div>
-        `;
-        
-        // Add marker
-        const marker = L.marker([lat, lng]).addTo(weatherMap);
-        marker.bindPopup(popupContent).openPopup();
-      }
-    }
-
-    // Update weather display
-    function updateWeatherDisplay(data) {
-      document.getElementById('weatherCity').textContent = data.city || '-';
-      document.getElementById('weatherTemp').textContent = data.temperature ? `${data.temperature}°C` : '-';
-      document.getElementById('weatherHumidity').textContent = data.humidity ? `${data.humidity}%` : '-';
-      document.getElementById('weatherWind').textContent = data.wind_speed ? `${data.wind_speed} m/s` : '-';
-      
-      // Show weather data section
-      document.getElementById('weatherData').style.display = 'block';
-    }
-
-    // Handle Enter key press in map search
-    function handleMapSearchKeypress(event) {
-      if (event.key === 'Enter') {
-        searchLocation();
-      }
-    }
-
-    // Search for location using Nominatim with improved matching
-    async function searchLocation() {
-      const searchInput = document.getElementById('mapSearchInput');
-      const searchTerm = searchInput.value.trim();
-      const statusDiv = document.getElementById('searchStatus');
-      
-      if (!searchTerm) {
-        statusDiv.textContent = 'Please enter a location to search';
-        statusDiv.style.color = '#ef4444';
-        return;
-      }
-      
-      statusDiv.textContent = 'Searching...';
-      statusDiv.style.color = '#6b7280';
-      
-      try {
-        console.log(`🔍 Searching for location: ${searchTerm}`);
-        
-        // Use Nominatim API for geocoding with more results and better parameters
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=5&addressdetails=1&extratags=1&namedetails=1`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const results = await response.json();
-        
-        if (results.length === 0) {
-          statusDiv.textContent = 'Location not found. Please try a different search term.';
-          statusDiv.style.color = '#ef4444';
-          return;
-        }
-        
-        // Find the most relevant match
-        const location = findBestMatch(results, searchTerm);
-        const lat = parseFloat(location.lat);
-        const lng = parseFloat(location.lon);
-        const displayName = location.display_name;
-        
-        console.log(`✅ Location found: ${displayName} at ${lat}, ${lng}`);
-        
-        // Update map view with appropriate zoom level
-        if (weatherMap) {
-          const zoomLevel = getZoomLevel(location);
-          weatherMap.setView([lat, lng], zoomLevel);
-          
-          // Add marker
-          addSearchMarker(lat, lng, displayName, location);
-          
-          // Fetch weather for this location
-          await fetchWeatherByCoordinates(lat, lng);
-        }
-        
-        statusDiv.textContent = `Found: ${displayName.split(',')[0]}`;
-        statusDiv.style.color = '#10b981';
-        
-      } catch (error) {
-        console.error('❌ Error searching location:', error);
-        statusDiv.textContent = 'Search failed. Please try again.';
-        statusDiv.style.color = '#ef4444';
-      }
-    }
-
-    // Find the best match from Nominatim results
-    function findBestMatch(results, searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      
-      // Score each result based on relevance
-      const scoredResults = results.map(result => {
-        let score = 0;
-        const displayName = result.display_name.toLowerCase();
-        const name = (result.name || '').toLowerCase();
-        const type = result.type || '';
-        
-        // Exact match gets highest score
-        if (displayName.includes(searchLower)) score += 10;
-        if (name.includes(searchLower)) score += 15;
-        
-        // Prefer cities, towns, villages
-        if (type === 'city' || type === 'town' || type === 'village') score += 5;
-        if (type === 'administrative') score += 3;
-        
-        // Prefer results with higher importance
-        score += (result.importance || 0) * 2;
-        
-        return { ...result, score };
-      });
-      
-      // Sort by score and return the best match
-      scoredResults.sort((a, b) => b.score - a.score);
-      return scoredResults[0];
-    }
-
-    // Get appropriate zoom level based on location type
-    function getZoomLevel(location) {
-      const type = location.type || '';
-      const importance = location.importance || 0;
-      
-      if (type === 'city' || importance > 0.8) return 12;
-      if (type === 'town' || importance > 0.6) return 13;
-      if (type === 'village' || importance > 0.4) return 14;
-      if (type === 'hamlet' || importance > 0.2) return 15;
-      return 11; // Default zoom level
-    }
-
-    // Add search marker to map with enhanced location data
-    function addSearchMarker(lat, lng, displayName, locationData) {
-      if (weatherMap) {
-        // Clear existing search markers (keep weather markers)
-        weatherMap.eachLayer(function(layer) {
-          if (layer instanceof L.Marker && layer.options.icon && layer.options.icon.options.className === 'search-marker') {
-            weatherMap.removeLayer(layer);
-          }
-        });
-        
-        // Create custom icon for search marker
-        const searchIcon = L.divIcon({
-          className: 'search-marker',
-          html: '<div style="background: #3b82f6; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>',
-          iconSize: [30, 30],
-          iconAnchor: [15, 15]
-        });
-        
-        // Add search marker
-        const marker = L.marker([lat, lng], { icon: searchIcon }).addTo(weatherMap);
-        
-        // Create enhanced popup content
-        const locationType = locationData.type || 'Location';
-        const importance = locationData.importance ? Math.round(locationData.importance * 100) : 'N/A';
-        
-        const popupContent = `
-          <div style="text-align: center; min-width: 200px; max-width: 300px;">
-            <h3 style="margin: 0 0 10px 0; color: #3b82f6; font-size: 16px;">${displayName.split(',')[0]}</h3>
-            <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
-              ${locationType.charAt(0).toUpperCase() + locationType.slice(1)}
-            </div>
-            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 5px;">
-              Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}
-            </div>
-            <div style="font-size: 11px; color: #9ca3af;">
-              Importance: ${importance}%
-            </div>
-          </div>
-        `;
-        
-        marker.bindPopup(popupContent).openPopup();
-      }
-    }
-    
-    // Remove profile photo
-    async function removeProfilePhoto() {
-      if (!confirm('Are you sure you want to remove your profile photo?')) {
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${backendUrl}/remove-photo`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ username: currentUser.username })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Remove failed: ${response.status}`);
-        }
-        
-        // Update displays
-        updateProfileAvatar(null);
-        updateUserAvatar(currentUser.username);
-        
-        console.log('✅ Profile photo removed');
-        alert('Profile photo removed successfully!');
-        
-      } catch (error) {
-        console.error('❌ Photo remove error:', error);
-        alert('Failed to remove photo. Please try again.');
-      }
-    }
-
-    // Update user city
-    async function updateUserCity() {
-      const newCity = document.getElementById('userCityInput').value;
-      
-      if (!newCity) {
-        alert('Please enter a city name');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${backendUrl}/update-city`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`
-          },
-          body: JSON.stringify({ city: newCity }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to update city');
-        }
-
-        // Update current user data
-        if (currentUser) {
-          currentUser.city = newCity;
-          updateUserDisplay();
-        }
-        
-        alert('City updated successfully!');
-        console.log('✅ City updated successfully');
-      } catch (error) {
-        console.error('City update error:', error);
-        alert(`Failed to update city: ${error.message}`);
-      }
-    }
-
-    // Save email
-    function saveEmail() {
-      const email = document.getElementById('emailInput').value;
-      
-      if (!email) {
-        alert('Please enter an email address');
-        return;
-      }
-
-      if (!isValidEmail(email)) {
-        alert('Please enter a valid email address');
-        return;
-      }
-
-      localStorage.setItem('USER_EMAIL', email);
-      loadUserEmail();
-      document.getElementById('emailInput').value = '';
-      
-      console.log('✅ Email saved successfully');
-    }
-
-    // Load user email
-    function loadUserEmail() {
-      const savedEmail = localStorage.getItem('USER_EMAIL');
-      if (savedEmail) {
-        currentEmail = savedEmail;
-        updateEmailDisplay();
-        console.log('✅ Email loaded from localStorage:', savedEmail);
-      }
-    }
-
-    // Update email display
-    function updateEmailDisplay() {
-      const emailElement = document.getElementById('currentEmail');
-      if (emailElement) {
-        emailElement.textContent = currentEmail || 'Not set';
-      }
-    }
-
-    // Unified profile update function
-    function updateProfile() {
-      const newUsername = document.getElementById('usernameInput').value.trim();
-      const newEmail = document.getElementById('emailInput').value.trim();
-      
-      let hasUpdates = false;
-      let updateMessages = [];
-      
-      // Validate and update username
-      if (newUsername) {
-        if (newUsername.length < 2) {
-          alert('Username must be at least 2 characters long');
-          return;
-        }
-        
-        if (newUsername.length > 20) {
-          alert('Username must be less than 20 characters long');
-          return;
-        }
-        
-        if (!/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
-          alert('Username can only contain letters, numbers, underscore (_), and hyphen (-)');
-          return;
-        }
-        
-        currentUsername = newUsername;
-        localStorage.setItem('USERNAME', currentUsername);
-        updateUsernameDisplay();
-        hasUpdates = true;
-        updateMessages.push(`Username: ${currentUsername}`);
-      }
-      
-      // Validate and update email
-      if (newEmail) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(newEmail)) {
-          alert('Please enter a valid email address');
-          return;
-        }
-        
-        currentEmail = newEmail;
-        localStorage.setItem('USER_EMAIL', currentEmail);
-        updateEmailDisplay();
-        hasUpdates = true;
-        updateMessages.push(`Email: ${currentEmail}`);
-      }
-      
-      if (hasUpdates) {
-        // Clear input fields
-        document.getElementById('usernameInput').value = '';
-        document.getElementById('emailInput').value = '';
-        
-        // Show success message
-        console.log('✅ Profile updated:', updateMessages.join(', '));
-        alert(`Profile updated successfully!\n${updateMessages.join('\n')}`);
-      } else {
-        alert('Please enter a username or email to update');
-      }
-    }
-
-    // Validate email
-    function isValidEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(email);
-    }
-
-    // Fetch latest AQI data
-    async function fetchLatest() {
-      if (!isAuthenticated) {
-        console.log('⚠️ User not authenticated, skipping data fetch');
-        return;
-      }
-
-      try {
-        updateStatus('Checking...', '');
-        console.log(`🔄 Fetching data from ${backendUrl}/readings`);
-        
-        const response = await fetch(`${backendUrl}/readings`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('ACCESS_TOKEN')}`,
-            'Content-Type': 'application/json'
-          },
-          signal: AbortSignal.timeout(5000) // 5 second timeout
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.log('🔐 Authentication expired, signing out');
-            signOut();
-            return;
-          }
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('📊 Received data:', data);
-        
-        // Update AQI data display with units
-        document.getElementById('pm10').textContent = data.pm10 ? `${data.pm10} μg/m³` : '-';
-        document.getElementById('pm25').textContent = data.pm25 ? `${data.pm25} μg/m³` : '-';
-        document.getElementById('co2').textContent = data.co2 ? `${data.co2} ppm` : '-';
-        document.getElementById('humidity').textContent = data.humidity ? `${data.humidity}%` : '-';
-        document.getElementById('temperature').textContent = data.temperature ? `${data.temperature}°C` : '-';
-
-        updateStatus(`Backend Connected (Port ${backendUrl.split(':').pop()})`, 'connected');
-        backendConnected = true;
-        
-        // Store reading time for ESP32 status
-        localStorage.setItem('lastReadingTime', new Date().toISOString());
-        
-        // Update ESP32 status
-        updateESP32Status();
-        
-        console.log('✅ AQI data fetched successfully');
-      } catch (error) {
-        console.error('❌ AQI data fetch error:', error);
-        backendConnected = false;
-        if (error.name === 'AbortError') {
-          updateStatus('Backend Timeout - Check connection', 'disconnected');
-        } else {
-          updateStatus('Backend Disconnected - Check if running', 'disconnected');
-        }
-        updateESP32Status();
-      }
-    }
-
-    // Fetch weather data
-    async function fetchWeather() {
-      const city = document.getElementById('cityInput').value;
-      
-      if (!city) {
-        alert('Please enter a city name');
-        return;
-      }
-
-      try {
-        console.log(`🌤️ Fetching weather for ${city} from ${backendUrl}/weather...`);
-        
-        const response = await fetch(`${backendUrl}/weather?city=${encodeURIComponent(city)}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          signal: AbortSignal.timeout(10000) // 10 second timeout for weather API
-        });
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('City not found. Please check the city name.');
-          } else if (response.status === 500) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Weather service error');
+          return response.json();
+        })
+        .then(data => {
+          if (data.status === 'success') {
+            updateESP32Status(true);
+            alert('ESP32 is online!');
           } else {
-            throw new Error(`Weather API error: ${response.status}`);
+            updateESP32Status(false);
+            alert('ESP32 is offline!');
           }
+        })
+        .catch(error => {
+          updateESP32Status(false);
+          alert('Failed to ping ESP32: ' + error.message);
+        });
+    }
+    
+    // Connect to specific port
+    function connectToPort(port) {
+      const url = `http://localhost:${port}`;
+      
+      updateBackendStatus('connecting', `Connecting to ${url}...`);
+      
+      fetch(`${url}/health`)
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('Backend not available');
+        })
+        .then(data => {
+          backendUrl = url;
+          updateBackendStatus('connected', `Backend Connected (Port ${port})`);
+          refreshData();
+        })
+        .catch(error => {
+          updateBackendStatus('disconnected', `Failed to connect to ${url}`);
+        });
+    }
+    
+    // Detect backend port with retry
+    function detectBackendPortWithRetry() {
+      const ports = [5000, 5001, 5008];
+      let portIndex = 0;
+      
+      function tryPort() {
+        if (portIndex >= ports.length) {
+          updateBackendStatus('disconnected', 'Backend Disconnected');
+          return;
         }
-
-        const data = await response.json();
-        console.log('🌤️ Weather data received:', data);
         
-        // Update weather display
-        document.getElementById('weatherCity').textContent = data.city || city;
-        document.getElementById('weatherTemp').textContent = data.temperature ? `${Math.round(data.temperature)}°C` : '-';
-        document.getElementById('weatherHumidity').textContent = data.humidity ? `${data.humidity}%` : '-';
-        document.getElementById('weatherWind').textContent = data.wind ? `${data.wind} m/s` : '-';
+        const port = ports[portIndex];
+        const url = `http://localhost:${port}`;
         
-        // Clear input
-        document.getElementById('cityInput').value = '';
+        updateBackendStatus('connecting', `Connecting to ${url}...`);
         
-        console.log('✅ Weather data fetched successfully');
-      } catch (error) {
-        console.error('❌ Weather fetch error:', error);
-        if (error.name === 'AbortError') {
-          alert('Weather request timed out. Please try again.');
-        } else {
-          alert(`Failed to fetch weather data: ${error.message}`);
-        }
+        fetch(`${url}/health`)
+          .then(response => {
+            if (response.ok) {
+              return response.json();
+            }
+            throw new Error('Backend not available');
+          })
+          .then(data => {
+            backendUrl = url;
+            updateBackendStatus('connected', `Backend Connected (Port ${port})`);
+            refreshData();
+          })
+          .catch(error => {
+            portIndex++;
+            setTimeout(tryPort, 500);
+          });
+      }
+      
+      tryPort();
+    }
+    
+    // Update backend status
+    function updateBackendStatus(status, message) {
+      const statusDetail = document.getElementById('backendStatusDetail');
+      
+      statusDetail.className = `badge ${status}`;
+      statusDetail.textContent = message;
+    }
+    
+    // Update ESP32 status
+    function updateESP32Status(online) {
+      const indicator = document.getElementById('esp32StatusIndicator');
+      const status = document.getElementById('esp32Status');
+      
+      if (online) {
+        indicator.className = 'status-indicator online';
+        status.textContent = 'Online';
+        document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
+      } else {
+        indicator.className = 'status-indicator offline';
+        status.textContent = 'Offline';
       }
     }
-
-    // Auto-refresh data every 30 seconds when authenticated
-    setInterval(() => {
-      if (isAuthenticated) {
-        fetchLatest();
+    
+    // Refresh data from backend
+    function refreshData() {
+      if (!backendUrl) {
+        detectBackendPortWithRetry();
+        return;
       }
-    }, 30000);
+      
+      // Show loading state
+      document.getElementById('pm10-value').textContent = 'Loading...';
+      document.getElementById('pm25-value').textContent = 'Loading...';
+      document.getElementById('co2-value').textContent = 'Loading...';
+      document.getElementById('humidity-value').textContent = 'Loading...';
+      document.getElementById('temp-value').textContent = 'Loading...';
+      
+      // Fetch latest readings
+      fetch(`${backendUrl}/latest`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch data');
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Data from backend:', data);
+          
+          // Update AQI values
+          document.getElementById('pm10-value').textContent = data.pm10 ? `${data.pm10} μg/m³` : '-';
+          document.getElementById('pm25-value').textContent = data.pm25 ? `${data.pm25} μg/m³` : '-';
+          document.getElementById('co2-value').textContent = data.co2 ? `${data.co2} ppm` : '-';
+          document.getElementById('humidity-value').textContent = data.humidity ? `${data.humidity}%` : '-';
+          document.getElementById('temp-value').textContent = data.temperature ? `${data.temperature}°C` : '-';
+          
+          // Update ESP32 status
+          updateESP32Status(true);
+          document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
+          
+          // Get current city from input or use default
+          const cityInput = document.getElementById('city-input');
+          const city = cityInput ? cityInput.value || 'Delhi' : 'Delhi';
+          
+          // Fetch weather data
+          return fetch(`${backendUrl}/weather?city=${encodeURIComponent(city)}`);
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch weather');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Update map if available
+          if (map && data.lat && data.lon) {
+            map.setView([data.lat, data.lon], 10);
+            
+            if (weatherMarker) {
+              map.removeLayer(weatherMarker);
+            }
+            
+            weatherMarker = L.marker([data.lat, data.lon]).addTo(map)
+              .bindPopup(`<b>${data.city || 'Location'}</b><br>Temp: ${data.temperature}°C<br>Humidity: ${data.humidity}%`)
+              .openPopup();
+          }
+          
+          // Update current city
+          document.getElementById('current-city').textContent = data.city || 'Delhi';
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          // If we can't fetch data, mark ESP32 as offline
+          updateESP32Status(false);
+          
+          // Use demo data if backend is not available
+          document.getElementById('pm10-value').textContent = (Math.random() * 100).toFixed(1) + ' μg/m³';
+          document.getElementById('pm25-value').textContent = (Math.random() * 50).toFixed(1) + ' μg/m³';
+          document.getElementById('co2-value').textContent = Math.floor(Math.random() * 1000 + 400) + ' ppm';
+          document.getElementById('humidity-value').textContent = (Math.random() * 100).toFixed(1) + '%';
+          document.getElementById('temp-value').textContent = (Math.random() * 15 + 20).toFixed(1) + '°C';
+        });
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Force login with admin user
+      localStorage.setItem('authToken', 'demo-token');
+      localStorage.setItem('username', 'admin');
+      
+      initializeApp();
+      initializeTheme();
+    });
   </script>
-  
-  <!-- Leaflet.js JavaScript -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 </html>

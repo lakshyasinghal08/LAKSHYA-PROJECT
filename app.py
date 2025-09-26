@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import requests
+import os
 
 app = Flask(__name__)
 # Enable CORS for all origins to allow frontend to connect
